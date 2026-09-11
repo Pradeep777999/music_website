@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ album.name }} - Album by {{ album.artists.0.name }} | Nexonic{% endblock %}
+
+{% block content %}
+<div class="section-container">
+    <!-- Album Hero Banner -->
+    <div class="hero-banner">
+        {% if album.images.0.url %}
+            <img class="hero-cover" id="album-cover-img" src="{{ album.images.0.url }}" alt="{{ album.name }}">
+        {% else %}
+            <img class="hero-cover" id="album-cover-img" src="https://picsum.photos/400" alt="{{ album.name }}">
+        {% endif %}
+        
+        <div class="hero-info">
+            <div class="hero-type">ALBUM</div>
+            <h1 class="hero-title" id="album-name-title">{{ album.name }}</h1>
+            <div class="hero-meta">
+                <span class="hero-meta-item bold" id="album-artist-name"><a href="/artist/{{ album.artists.0.id }}/?name={{ album.artists.0.name|urlencode }}">{{ album.artists.0.name }}</a></span>
+                <span class="hero-meta-dot"></span>
+                <span class="hero-meta-item">{{ album.release_date|slice:":4" }}</span>
+                <span class="hero-meta-dot"></span>
+                <span class="hero-meta-item">{{ tracks|length }} songs</span>
+            </div>
+            
+            <div class="hero-actions">
+                <!-- Play all / first track button -->
+                {% if tracks %}
+                    <button class="btn-primary" id="play-album-btn">
+                        <i class="fas fa-play"></i> PLAY
+                    </button>
+                {% endif %}
+                
+                <!-- Like Album toggler -->
+                <button class="btn-icon {% if is_liked %}active{% endif %}" id="like-album-btn" title="Like Album">
+                    <i class="{% if is_liked %}fas fa-heart{% else %}far fa-heart{% endif %}"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tracks Table -->
+    <div class="tracks-table-container">
+        <table class="tracks-table">
+            <thead>
+                <tr>
+                    <th class="track-index-col">#</th>
+                    <th>Title</th>
+                    <th class="track-actions-col"></th>
+                    <th class="track-duration-col"><i class="far fa-clock"></i></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for track in tracks %}
+                    <!-- We bind data values so player.js can read them instantly when played -->
+                    <tr data-track-id="{{ track.id }}" 
+                        data-track-name="{{ track.name }}" 
+                        data-track-artist="{{ track.artists.0.name }}" 
+                        data-track-album="{{ album.name }}" 
+                        data-track-art="{{ album.images.0.url }}" 
+                        data-track-duration="{{ track.duration_ms }}" 
+                        data-track-preview="{{ track.preview_url|default:'' }}">
+                        
+                        <td class="track-index-col">
+                            <span class="index-number">{{ forloop.counter }}</span>
+                            {% if track.preview_url %}
+                                <i class="fas fa-play play-icon-table" data-action="play-track"></i>
+                            {% else %}
+                                <i class="fas fa-play play-icon-table" style="opacity:0.3;cursor:not-allowed;" title="Preview not available"></i>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="track-title-cell text-primary">
+                            <div>
+                                <div class="track-name-main">{{ track.name }}</div>
+                                <div class="track-artist-sub">
+                                    {% for art in track.artists %}
+                                        <a href="/artist/{{ art.id }}/?name={{ art.name|urlencode }}">{{ art.name }}</a>{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </td>
+                        
+                        <td class="track-actions-col">
+                            <!-- Toggle Like Track -->
+                            <button class="btn-icon {% if track.is_liked %}active{% endif %}" data-action="like-track" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex;">
+                                <i class="{% if track.is_liked %}fas fa-heart text-success{% else %}far fa-heart{% endif %}"></i>
+                            </button>
+                            
+                            <!-- Add to Playlist -->
+                            <button class="btn-icon" data-action="add-to-playlist" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex;">
+                                <i class="fas fa-plus"></i>
+                            </button>
+
+                            <!-- Make Ringtone -->
+                            {% if track.preview_url %}
+                                <a href="{% url 'ringtone_maker' %}?track_id={{ track.id }}&preview_url={{ track.preview_url|urlencode }}&title={{ track.name|urlencode }}&artist={{ track.artists.0.name|urlencode }}&image={{ album.images.0.url|urlencode }}" class="btn-icon" title="Make Ringtone" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex; align-items:center; justify-content:center; color:inherit;">
+                                    <i class="fas fa-cut"></i>
+                                </a>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="track-duration-col">
+                            {{ track.duration_str }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                            No tracks found in this album.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Album details toggling scripts
+    document.addEventListener('DOMContentLoaded', () => {
+        const likeAlbumBtn = document.getElementById('like-album-btn');
+        const playAlbumBtn = document.getElementById('play-album-btn');
+        
+        if (likeAlbumBtn) {
+            likeAlbumBtn.addEventListener('click', async () => {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+                
+                try {
+                    const response = await fetch('/api/like-album/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            album_id: '{{ album.id }}',
+                            album_name: document.getElementById('album-name-title')?.innerText || '',
+                            artist_name: '{{ album.artists.0.name }}',
+                            album_image: document.getElementById('album-cover-img')?.src || '',
+                            release_date: '{{ album.release_date }}'
+                        })
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        likeAlbumBtn.classList.toggle('active', data.liked);
+                        likeAlbumBtn.innerHTML = data.liked ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>';
+                        window.player.showNotification(data.liked ? 'Album added to library' : 'Album removed from library');
+                    }
+                } catch (e) {
+                    console.error("Failed to toggle album like status", e);
+                }
+            });
+        }
+        
+        if (playAlbumBtn) {
+            playAlbumBtn.addEventListener('click', () => {
+                // Find all track rows and trigger playing queue
+                const rows = document.querySelectorAll('tr[data-track-id]');
+                if (rows.length > 0) {
+                    const tracksList = [];
+                    rows.forEach(row => {
+                        tracksList.push({
+                            id: row.dataset.trackId,
+                            name: row.dataset.trackName,
+                            artist: row.dataset.trackArtist,
+                            album: row.dataset.trackAlbum,
+                            album_art: row.dataset.trackArt,
+                            duration_ms: parseInt(row.dataset.trackDuration || 0),
+                            preview_url: row.dataset.trackPreview || ''
+                        });
+                    });
+                    // Play the first track in list
+                    window.player.setQueue(tracksList, 0);
+                    window.player.play();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

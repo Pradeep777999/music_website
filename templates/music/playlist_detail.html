@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if is_spotify_playlist %}{{ playlist.name }} - Playlist | Nexonic{% else %}{{ playlist.name }} - User Playlist | Nexonic{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="section-container">
+    <!-- Playlist Hero Banner -->
+    <div class="hero-banner">
+        
+        <!-- Editable Cover Art (Only for User playlists) -->
+        {% if not is_spotify_playlist %}
+            <div class="hero-cover-wrapper" onclick="document.getElementById('edit-playlist-modal').style.display='flex'">
+                {% if playlist.cover_image %}
+                    <img class="hero-cover" id="playlist-cover-art" src="{{ playlist.cover_image.url }}" alt="{{ playlist.name }}">
+                {% else %}
+                    <img class="hero-cover" id="playlist-cover-art" src="https://picsum.photos/id/1043/400/400" alt="{{ playlist.name }}">
+                {% endif %}
+                <div class="hero-cover-overlay">
+                    <i class="fas fa-pencil-alt" style="font-size: 24px;"></i>
+                    <span>Edit Details</span>
+                </div>
+            </div>
+        {% else %}
+            <!-- Spotify Read-Only Cover Art -->
+            {% if playlist.images.0.url %}
+                <img class="hero-cover" src="{{ playlist.images.0.url }}" alt="{{ playlist.name }}">
+            {% else %}
+                <img class="hero-cover" src="https://picsum.photos/id/1043/400/400" alt="{{ playlist.name }}">
+            {% endif %}
+        {% endif %}
+        
+        <div class="hero-info">
+            <div class="hero-type">PLAYLIST</div>
+            
+            <!-- Click to edit playlist metadata (Only for User playlists) -->
+            {% if not is_spotify_playlist %}
+                <h1 class="hero-title" id="playlist-title" onclick="document.getElementById('edit-playlist-modal').style.display='flex'" style="cursor:pointer; border-radius: 4px; transition: var(--transition-fast);">
+                    {{ playlist.name }} <i class="fas fa-edit" style="font-size: 16px; opacity: 0.3; vertical-align: middle;"></i>
+                </h1>
+            {% else %}
+                <h1 class="hero-title">{{ playlist.name }}</h1>
+            {% endif %}
+
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 12px;" id="playlist-desc-para">
+                {% if playlist.description %}{{ playlist.description|striptags }}{% else %}No description provided.{% endif %}
+            </p>
+            
+            <div class="hero-meta">
+                <span class="hero-meta-item bold">
+                    {% if is_spotify_playlist %}
+                        {{ playlist.owner.display_name }}
+                    {% else %}
+                        {{ playlist.user.username }}
+                    {% endif %}
+                </span>
+                <span class="hero-meta-dot"></span>
+                <span class="hero-meta-item">{{ tracks|length }} songs</span>
+                
+                {% if not is_spotify_playlist %}
+                    <span class="hero-meta-dot"></span>
+                    <span class="hero-meta-item">Updated {{ playlist.updated_at|date:"F d, Y" }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="hero-actions">
+                {% if tracks %}
+                    <button class="btn-primary" id="play-playlist-btn">
+                        <i class="fas fa-play"></i> PLAY
+                    </button>
+                {% endif %}
+                
+                {% if not is_spotify_playlist %}
+                    <!-- Delete playlist button form -->
+                    <form method="POST" action="{% url 'delete_playlist' playlist.id %}" onsubmit="return confirm('Are you sure you want to delete this playlist? This action cannot be undone.')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-secondary" style="border-color:#bd2130; color:#dc3545; padding: 12px 24px;">
+                            <i class="fas fa-trash-alt"></i> DELETE PLAYLIST
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tracks Table -->
+    <div class="tracks-table-container">
+        <table class="tracks-table">
+            <thead>
+                <tr>
+                    <th class="track-index-col">#</th>
+                    <th>Title</th>
+                    <th>Album</th>
+                    <th class="track-actions-col"></th>
+                    <th class="track-duration-col"><i class="far fa-clock"></i></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for track in tracks %}
+                    <tr data-track-id="{% if is_spotify_playlist %}{{ track.id }}{% else %}{{ track.spotify_track_id }}{% endif %}" 
+                        data-track-name="{% if is_spotify_playlist %}{{ track.name }}{% else %}{{ track.track_name }}{% endif %}" 
+                        data-track-artist="{% if is_spotify_playlist %}{{ track.artists.0.name }}{% else %}{{ track.artist_name }}{% endif %}" 
+                        data-track-album="{% if is_spotify_playlist %}{{ track.album.name }}{% else %}{{ track.album_name }}{% endif %}" 
+                        data-track-art="{% if is_spotify_playlist %}{{ track.album.images.0.url }}{% else %}{{ track.album_image }}{% endif %}" 
+                        data-track-duration="{{ track.duration_ms }}" 
+                        data-track-preview="{{ track.preview_url|default:'' }}">
+                        
+                        <td class="track-index-col">
+                            <span class="index-number">{{ forloop.counter }}</span>
+                            {% if track.preview_url %}
+                                <i class="fas fa-play play-icon-table" data-action="play-track"></i>
+                            {% else %}
+                                <i class="fas fa-play play-icon-table" style="opacity:0.3;cursor:not-allowed;" title="Preview not available"></i>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="track-title-cell text-primary">
+                            {% if is_spotify_playlist %}
+                                {% if track.album.images.0.url %}
+                                    <img class="track-thumbnail" src="{{ track.album.images.0.url }}" alt="">
+                                {% endif %}
+                            {% else %}
+                                {% if track.album_image %}
+                                    <img class="track-thumbnail" src="{{ track.album_image }}" alt="">
+                                {% endif %}
+                            {% endif %}
+                            <div>
+                                <div class="track-name-main">{% if is_spotify_playlist %}{{ track.name }}{% else %}{{ track.track_name }}{% endif %}</div>
+                                <div class="track-artist-sub">
+                                    {% if is_spotify_playlist %}
+                                        {% for art in track.artists %}
+                                            <a href="/artist/{{ art.id }}/">{{ art.name }}</a>{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        {{ track.artist_name }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        
+                        <td>
+                            {% if is_spotify_playlist %}{{ track.album.name }}{% else %}{{ track.album_name }}{% endif %}
+                        </td>
+                        
+                        <td class="track-actions-col">
+                            <!-- Toggle Like Track -->
+                            <button class="btn-icon {% if track.is_liked %}active{% endif %}" data-action="like-track" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex;">
+                                <i class="{% if track.is_liked %}fas fa-heart text-success{% else %}far fa-heart{% endif %}"></i>
+                            </button>
+                            
+                            {% if not is_spotify_playlist %}
+                                <!-- Remove Track from user playlist -->
+                                <button class="btn-icon" data-action="remove-playlist-song" data-playlist-id="{{ playlist.id }}" title="Remove from playlist" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex; color:#dc3545;">
+                                    <i class="fas fa-minus-circle"></i>
+                                </button>
+                            {% else %}
+                                <!-- Add to User Playlist (Only for Spotify playlists) -->
+                                <button class="btn-icon" data-action="add-to-playlist" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex;">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            {% endif %}
+
+                            <!-- Make Ringtone -->
+                            {% if track.preview_url %}
+                                <a href="{% url 'ringtone_maker' %}?track_id={% if is_spotify_playlist %}{{ track.id }}{% else %}{{ track.spotify_track_id }}{% endif %}&preview_url={{ track.preview_url|urlencode }}&title={% if is_spotify_playlist %}{{ track.name|urlencode }}{% else %}{{ track.track_name|urlencode }}{% endif %}&artist={% if is_spotify_playlist %}{{ track.artists.0.name|urlencode }}{% else %}{{ track.artist_name|urlencode }}{% endif %}&image={% if is_spotify_playlist %}{{ track.album.images.0.url|urlencode }}{% else %}{{ track.album_image|urlencode }}{% endif %}" class="btn-icon" title="Make Ringtone" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex; align-items:center; justify-content:center; color:inherit;">
+                                    <i class="fas fa-cut"></i>
+                                </a>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="track-duration-col">
+                            {{ track.duration_str }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                            No tracks found in this playlist.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Edit Playlist Details Modal (User playlist only) -->
+{% if not is_spotify_playlist %}
+<div class="playlist-modal" id="edit-playlist-modal" style="display: none;">
+    <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Edit Details</h3>
+            <span class="modal-close" onclick="document.getElementById('edit-playlist-modal').style.display='none'">&times;</span>
+        </div>
+        
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="auth-form-group">
+                <label class="auth-input-label">Playlist Name</label>
+                <input type="text" name="name" value="{{ playlist.name }}" required placeholder="Playlist Title">
+            </div>
+            
+            <div class="auth-form-group">
+                <label class="auth-input-label">Description</label>
+                <textarea name="description" placeholder="Add an optional description" rows="3">{{ playlist.description }}</textarea>
+            </div>
+            
+            <div class="auth-form-group">
+                <label class="auth-input-label">Change Cover Image</label>
+                <input type="file" name="cover_image" accept="image/*">
+            </div>
+            
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+                <button type="button" class="btn-secondary" onclick="document.getElementById('edit-playlist-modal').style.display='none'" style="padding: 10px 20px;">CANCEL</button>
+                <button type="submit" class="btn-primary" style="border:none; padding: 10px 24px;">SAVE</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const playPlaylistBtn = document.getElementById('play-playlist-btn');
+        
+        if (playPlaylistBtn) {
+            playPlaylistBtn.addEventListener('click', () => {
+                const rows = document.querySelectorAll('tr[data-track-id]');
+                if (rows.length > 0) {
+                    const tracksList = [];
+                    rows.forEach(row => {
+                        tracksList.push({
+                            id: row.dataset.trackId,
+                            name: row.dataset.trackName,
+                            artist: row.dataset.trackArtist,
+                            album: row.dataset.trackAlbum,
+                            album_art: row.dataset.trackArt,
+                            duration_ms: parseInt(row.dataset.trackDuration || 0),
+                            preview_url: row.dataset.trackPreview || ''
+                        });
+                    });
+                    window.player.setQueue(tracksList, 0);
+                    window.player.play();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

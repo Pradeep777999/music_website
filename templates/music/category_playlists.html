@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ category_name }} Playlists - Nexonic{% endblock %}
+
+{% block content %}
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">{{ category_name }} Playlists</h2>
+    </div>
+    
+    <div class="media-grid">
+        {% for pl in playlists %}
+            <div class="media-card" onclick="window.location.href='/spotify-playlist/{{ pl.id }}/?name={{ pl.name|urlencode }}'">
+                <div class="card-image-wrapper">
+                    {% if pl.images.0.url %}
+                        <img class="card-image" src="{{ pl.images.0.url }}" alt="{{ pl.name }}">
+                    {% else %}
+                        <img class="card-image" src="https://picsum.photos/300" alt="{{ pl.name }}">
+                    {% endif %}
+                </div>
+                <div class="card-title">{{ pl.name }}</div>
+                <div class="card-subtitle">{{ pl.description|striptags }}</div>
+            </div>
+        {% empty %}
+            <div style="text-align: center; padding: 40px; color: var(--text-muted); width: 100%;">
+                No playlists available for this category.
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

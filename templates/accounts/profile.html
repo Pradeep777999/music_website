@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profile - Nexonic{% endblock %}
+
+{% block content %}
+<div class="section-container">
+    <div class="hero-banner">
+        {% if profile.avatar %}
+            <img class="hero-cover round" src="{{ profile.avatar.url }}" alt="{{ user.username }}">
+        {% else %}
+            <img class="hero-cover round" src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y&s=200" alt="{{ user.username }}">
+        {% endif %}
+        
+        <div class="hero-info">
+            <div class="hero-type">PROFILE</div>
+            <h1 class="hero-title">{{ user.username }}</h1>
+            <div class="hero-meta">
+                <span class="hero-meta-item bold">{{ user.email }}</span>
+                <span class="hero-meta-dot"></span>
+                <span class="hero-meta-item">Joined {{ user.date_joined|date:"F Y" }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px; align-items: flex-start;" class="profile-layout-grid">
+    <!-- Edit profile details -->
+    <div class="settings-section">
+        <h2 class="settings-section-title">Edit Profile Details</h2>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <div style="color:#dc3545; font-size:13px; margin-bottom: 12px;">{{ error }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="auth-form-group">
+                <label class="auth-input-label">Username</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <span style="color:#dc3545; font-size:11px;">{{ form.username.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="auth-form-group">
+                <label class="auth-input-label">Email Address</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <span style="color:#dc3545; font-size:11px;">{{ form.email.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="auth-form-group">
+                <label class="auth-input-label">Biography</label>
+                {{ form.bio }}
+                {% if form.bio.errors %}
+                    <span style="color:#dc3545; font-size:11px;">{{ form.bio.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="auth-form-group">
+                <label class="auth-input-label">Upload Avatar Image</label>
+                {{ form.avatar }}
+                {% if form.avatar.errors %}
+                    <span style="color:#dc3545; font-size:11px;">{{ form.avatar.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn-primary" style="border:none; margin-top: 15px;">SAVE CHANGES</button>
+        </form>
+    </div>
+
+    <!-- Stats & shortcuts block -->
+    <div style="display:flex; flex-direction:column; gap:24px;">
+        <div class="settings-section" style="text-align: center; padding: 32px 24px;">
+            <h2 class="settings-section-title" style="border-bottom:none; margin-bottom: 0;">Nexonic Stats</h2>
+            
+            <div style="display: flex; justify-content: space-around; margin-top: 24px;">
+                <div>
+                    <div style="font-size: 32px; font-weight: 800; color: var(--brand-green);">{{ liked_songs_count }}</div>
+                    <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-top: 4px;">Liked Songs</div>
+                </div>
+                
+                <div style="width: 1px; background-color: var(--border-color);"></div>
+                
+                <div>
+                    <div style="font-size: 32px; font-weight: 800; color: var(--brand-green);">{{ playlists_count }}</div>
+                    <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-top: 4px;">Playlists</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2 class="settings-section-title">Account Security</h2>
+            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+                Keep your account secure by modifying your password regularly.
+            </p>
+            <a href="{% url 'change_password' %}" class="btn-secondary" style="display: inline-block; text-align: center;">CHANGE PASSWORD</a>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Recently played tracks list -->
+<div class="section-container" style="margin-top: 40px;">
+    <div class="section-header">
+        <h2 class="section-title">Recently Played Songs</h2>
+    </div>
+    
+    <table class="tracks-table">
+        <tbody>
+            {% for song in recently_played %}
+                <tr data-track-id="{{ song.spotify_track_id }}" 
+                    data-track-name="{{ song.track_name }}" 
+                    data-track-artist="{{ song.artist_name }}" 
+                    data-track-album="{{ song.album_name }}" 
+                    data-track-art="{{ song.album_image }}" 
+                    data-track-duration="{{ song.duration_ms }}" 
+                    data-track-preview="{{ song.preview_url }}">
+                    <td class="track-index-col">
+                        <span class="index-number">{{ forloop.counter }}</span>
+                        {% if song.preview_url %}
+                            <i class="fas fa-play play-icon-table" data-action="play-track"></i>
+                        {% else %}
+                            <i class="fas fa-play play-icon-table" style="opacity:0.3;cursor:not-allowed;" title="Preview not available"></i>
+                        {% endif %}
+                    </td>
+                    <td class="track-title-cell">
+                        {% if song.album_image %}
+                            <img class="track-thumbnail" src="{{ song.album_image }}" alt="">
+                        {% else %}
+                            <img class="track-thumbnail" src="https://picsum.photos/100" alt="">
+                        {% endif %}
+                        <div>
+                            <div class="track-name-main">{{ song.track_name }}</div>
+                            <div class="track-artist-sub">{{ song.artist_name }}</div>
+                        </div>
+                    </td>
+                    <td class="track-actions-col">
+                        <button class="btn-icon" data-action="like-track" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex;">
+                            <i class="fas fa-heart text-success"></i> <!-- It is recently played, we show active liked if liked, but since it's history, we check via player.js checking active hearts on load -->
+                        </button>
+                    </td>
+                    <td style="font-size:12px; color: var(--text-muted);">
+                        Played {{ song.played_at|timesince }} ago
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        No tracks played recently.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+    @media (max-width: 768px) {
+        .profile-layout-grid {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+{% endblock %}

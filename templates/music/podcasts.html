@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Podcasts - Nexonic{% endblock %}
+
+{% block content %}
+<!-- Podcast Hero / Header Banner -->
+<div class="section-container" style="margin-bottom: 24px;">
+    <div style="background: linear-gradient(135deg, #182848 0%, #4b6cb7 100%); border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); padding: 48px 32px; display: flex; flex-direction: column; justify-content: center; min-height: 200px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative; overflow: hidden;">
+        <!-- Subtle decorative design shape -->
+        <div style="position: absolute; right: -50px; bottom: -50px; width: 250px; height: 250px; border-radius: 50%; background: rgba(255,255,255,0.03); pointer-events: none;"></div>
+        <div style="position: absolute; right: 100px; top: -30px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.02); pointer-events: none;"></div>
+        
+        <span style="font-size: 11px; font-weight: 700; color: #1db954; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px;">Explore</span>
+        <h1 style="font-size: 38px; font-weight: 800; margin: 0 0 12px; color: #fff;">Nexonic Podcasts</h1>
+        <p style="font-size: 14px; color: var(--text-muted); max-width: 500px; line-height: 1.6; margin: 0;">Discover educational insights, deep-dive technology panels, mind health guidance, and inspiring stories from top global shows.</p>
+    </div>
+</div>
+
+<!-- Instant Podcast Search Bar -->
+<div class="section-container" style="margin-bottom: 32px;">
+    <div style="position: relative; max-width: 480px;">
+        <i class="fas fa-search" style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; pointer-events: none;"></i>
+        <input type="text" id="podcast-search-input" placeholder="Search podcasts..." style="width: 100%; padding: 14px 20px 14px 48px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 28px; color: #fff; font-size: 14px; outline: none; transition: all 0.25s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+    </div>
+</div>
+
+<!-- 1. Search Results Container (Initially Hidden) -->
+<div id="podcast-search-results" class="section-container" style="display: none; margin-bottom: 32px;">
+    <div class="section-header">
+        <h2 class="section-title">Search Results</h2>
+    </div>
+    <div class="media-grid" id="podcast-search-grid">
+        <!-- Rendered dynamically by JavaScript -->
+    </div>
+</div>
+
+<!-- 2. Default Content Container (Curated & Followed list, Hidden during search) -->
+<div id="podcast-default-content">
+    <!-- Followed Podcasts Section -->
+    {% if saved_shows %}
+    <div class="section-container" style="margin-bottom: 32px;">
+        <div class="section-header">
+            <h2 class="section-title">Your Followed Podcasts</h2>
+        </div>
+        <div class="media-grid">
+            {% for show in saved_shows %}
+                <div class="media-card" onclick="window.location.href='{% url 'podcast_detail' show.spotify_show_id %}'" style="cursor: pointer;">
+                    <div class="card-image-wrapper">
+                        {% if show.show_image %}
+                            <img class="card-image" src="{{ show.show_image }}" alt="{{ show.show_name }}">
+                        {% else %}
+                            <img class="card-image" src="https://picsum.photos/id/1025/300/300" alt="{{ show.show_name }}">
+                        {% endif %}
+                    </div>
+                    <div class="card-title">{{ show.show_name }}</div>
+                    <div class="card-subtitle">
+                        {% if show.publisher and show.publisher != "None" %}
+                            By {{ show.publisher }}
+                        {% else %}
+                            Podcast
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Featured Shows Section -->
+    <div class="section-container">
+        <div class="section-header">
+            <h2 class="section-title">Popular Podcasts</h2>
+        </div>
+        
+        <div class="media-grid">
+            {% for show in featured_shows %}
+                {% if show %}
+                <div class="media-card" onclick="window.location.href='{% url 'podcast_detail' show.id %}'" style="cursor: pointer;">
+                    <div class="card-image-wrapper">
+                        {% if show.images.0.url %}
+                            <img class="card-image" src="{{ show.images.0.url }}" alt="{{ show.name }}">
+                        {% else %}
+                            <img class="card-image" src="https://picsum.photos/300" alt="{{ show.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="card-title">{{ show.name }}</div>
+                    <div class="card-subtitle">
+                        {% if show.publisher and show.publisher != "None" %}
+                            By {{ show.publisher }}
+                        {% else %}
+                            Podcast
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('podcast-search-input');
+        const searchResults = document.getElementById('podcast-search-results');
+        const searchGrid = document.getElementById('podcast-search-grid');
+        const defaultContent = document.getElementById('podcast-default-content');
+        let debounceTimeout = null;
+
+        if (searchInput) {
+            // Styling interactions
+            searchInput.addEventListener('focus', () => {
+                searchInput.style.borderColor = '#1db954';
+                searchInput.style.backgroundColor = 'rgba(255,255,255,0.08)';
+            });
+            searchInput.addEventListener('blur', () => {
+                searchInput.style.borderColor = 'var(--border-color)';
+                searchInput.style.backgroundColor = 'rgba(255,255,255,0.05)';
+            });
+
+            // Instant keyup search
+            searchInput.addEventListener('input', () => {
+                clearTimeout(debounceTimeout);
+                const query = searchInput.value.trim();
+
+                if (query.length === 0) {
+                    searchResults.style.display = 'none';
+                    defaultContent.style.display = 'block';
+                    return;
+                }
+
+                debounceTimeout = setTimeout(async () => {
+                    defaultContent.style.display = 'none';
+                    searchResults.style.display = 'block';
+                    searchGrid.innerHTML = `
+                        <div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted);">
+                            <i class="fas fa-circle-notch fa-spin fa-2x"></i>
+                            <p style="margin-top:12px;">Searching podcasts...</p>
+                        </div>
+                    `;
+
+                    try {
+                        const response = await fetch(`/search/?q=${encodeURIComponent(query)}`, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        const data = await response.json();
+
+                        if (data.success && data.shows && data.shows.length > 0) {
+                            searchGrid.innerHTML = '';
+                            data.shows.forEach(show => {
+                                if (!show) return;
+                                
+                                const artUrl = show.images && show.images.length > 0 ? show.images[0].url : 'https://picsum.photos/300';
+                                const publisherText = show.publisher && show.publisher !== "None" ? `By ${show.publisher}` : 'Podcast';
+                                
+                                const card = document.createElement('div');
+                                card.className = 'media-card';
+                                card.style.cursor = 'pointer';
+                                card.innerHTML = `
+                                    <div class="card-image-wrapper">
+                                        <img class="card-image" src="${artUrl}" alt="">
+                                    </div>
+                                    <div class="card-title">${show.name}</div>
+                                    <div class="card-subtitle">${publisherText}</div>
+                                `;
+                                card.addEventListener('click', () => {
+                                    window.location.href = `/podcast/${show.id}/`;
+                                });
+                                searchGrid.appendChild(card);
+                            });
+                        } else {
+                            searchGrid.innerHTML = `
+                                <div style="grid-column: 1/-1; text-align:center; padding:60px 20px; color:var(--text-muted);">
+                                    <i class="fas fa-search" style="font-size:36px; margin-bottom:16px;"></i>
+                                    <h3>No podcasts found for "${query}"</h3>
+                                    <p style="font-size:13px; margin-top:8px;">Try refining your keywords.</p>
+                                </div>
+                            `;
+                        }
+                    } catch (e) {
+                        console.error("Podcast search error:", e);
+                        searchGrid.innerHTML = `
+                            <div style="grid-column: 1/-1; text-align:center; padding:40px; color:#bd2130;">
+                                <p>Something went wrong. Please check your connection or try again.</p>
+                            </div>
+                        `;
+                    }
+                }, 300);
+            });
+        }
+    });
+</script>
+{% endblock %}

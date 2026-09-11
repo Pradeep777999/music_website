@@ -1,0 +1,72 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Code - Nexonic</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <!-- Theme FOUC prevention script -->
+    <script>
+        (function() {
+            var theme = localStorage.getItem('theme');
+            if (theme === 'light') {
+                document.documentElement.classList.add('light-theme');
+            }
+        })();
+    </script>
+</head>
+<body class="auth-page-container">
+
+    <!-- Toast Notifications container -->
+    <div id="toast-container" class="messages-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message-alert {{ message.tags }}">
+                    <span>{{ message }}</span>
+                    <span class="message-close" onclick="this.parentNode.remove()">&times;</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="auth-card">
+        <div class="auth-brand">NEXONIC</div>
+        <h2 class="auth-title">Verify Your Email</h2>
+        
+        <p class="otp-verify-desc">
+            We sent a secure 6-digit verification code to<br>
+            <strong style="color: #fff;">{{ email }}</strong>.<br>
+            Please enter the code below.
+        </p>
+
+        <form method="POST" class="otp-verify-box">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <div style="color:#dc3545; font-size: 13px; margin-bottom: 15px; text-align: center;">{{ error }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="auth-form-group">
+                {{ form.otp }}
+                {% if form.otp.errors %}
+                    <div style="color:#dc3545; font-size:12px; margin-top:10px;">{{ form.otp.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="auth-submit-btn">VERIFY CODE</button>
+        </form>
+
+        <div class="auth-divider" style="height: 1px; background-color: var(--border-color); margin: 30px 0;"></div>
+
+        <div class="auth-links">
+            Incorrect email? <a href="{% url 'register' %}" class="auth-link">Start over</a>
+        </div>
+    </div>
+
+    <script src="{% static 'js/theme.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Your Library - Nexonic{% endblock %}
+
+{% block content %}
+<div class="section-container">
+    <h1 class="hero-title" style="font-size: 32px; margin-bottom: 24px;">Your Library</h1>
+    
+    <!-- Tab Navigation headers -->
+    <div class="tabs-header">
+        <button class="tab-btn active" onclick="switchTab('playlists-tab', this)">Playlists</button>
+        <button class="tab-btn" onclick="switchTab('my-creations-tab', this)">My Creations</button>
+        <button class="tab-btn" onclick="switchTab('liked-songs-tab', this)">Liked Songs</button>
+        <button class="tab-btn" onclick="switchTab('liked-albums-tab', this)">Albums</button>
+        <button class="tab-btn" onclick="switchTab('saved-artists-tab', this)">Artists</button>
+        <button class="tab-btn" onclick="switchTab('saved-shows-tab', this)">Podcasts</button>
+        <button class="tab-btn" onclick="switchTab('recently-played-tab', this)">Recently Played</button>
+    </div>
+
+    <!-- 1. Playlists Tab -->
+    <div class="tab-content active" id="playlists-tab">
+        <div style="display:flex; justify-content:flex-end; margin-bottom: 20px;">
+            <a href="{% url 'create_playlist' %}" class="btn-primary">
+                <i class="fas fa-plus"></i> Create Playlist
+            </a>
+        </div>
+        
+        <div class="media-grid">
+            {% for pl in user_playlists %}
+                <a href="{% url 'playlist_detail' pl.id %}" class="media-card">
+                    <div class="card-image-wrapper">
+                        {% if pl.cover_image %}
+                            <img class="card-image" src="{{ pl.cover_image.url }}" alt="{{ pl.name }}">
+                        {% else %}
+                            <img class="card-image" src="https://picsum.photos/id/1043/300/300" alt="{{ pl.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="card-title">{{ pl.name }}</div>
+                    <div class="card-subtitle">Playlist &bull; {{ pl.songs.count }} songs</div>
+                </a>
+            {% empty %}
+                <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                    <i class="fas fa-music" style="font-size: 36px; margin-bottom:16px; color:#2a2a2a;"></i>
+                    <h3>Create your first playlist</h3>
+                    <p style="font-size:13px; margin: 8px 0 16px;">It's easy, we'll help you.</p>
+                    <a href="{% url 'create_playlist' %}" class="btn-primary" style="display:inline-flex;">Create Playlist</a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 2. Liked Songs Tab -->
+    <div class="tab-content" id="liked-songs-tab">
+        {% if liked_songs %}
+            <div style="display:flex; justify-content:flex-end; margin-bottom: 20px;">
+                <button class="btn-primary" id="play-liked-btn">
+                    <i class="fas fa-play"></i> Play Liked Songs
+                </button>
+            </div>
+            
+            <table class="tracks-table">
+                <thead>
+                    <tr>
+                        <th class="track-index-col">#</th>
+                        <th>Title</th>
+                        <th>Album</th>
+                        <th class="track-actions-col"></th>
+                        <th class="track-duration-col"><i class="far fa-clock"></i></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for track in liked_songs %}
+                        <tr data-track-id="{{ track.spotify_track_id }}" 
+                            data-track-name="{{ track.track_name }}" 
+                            data-track-artist="{{ track.artist_name }}" 
+                            data-track-album="{{ track.album_name }}" 
+                            data-track-art="{{ track.album_image }}" 
+                            data-track-duration="{{ track.duration_ms }}" 
+                            data-track-preview="{{ track.preview_url|default:'' }}">
+                            
+                            <td class="track-index-col">
+                                <span class="index-number">{{ forloop.counter }}</span>
+                                {% if track.preview_url %}
+                                    <i class="fas fa-play play-icon-table" data-action="play-track"></i>
+                                {% else %}
+                                    <i class="fas fa-play play-icon-table" style="opacity:0.3;cursor:not-allowed;" title="Preview not available"></i>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="track-title-cell text-primary">
+                                {% if track.album_image %}
+                                    <img class="track-thumbnail" src="{{ track.album_image }}" alt="">
+                                {% endif %}
+                                <div>
+                                    <div class="track-name-main">{{ track.track_name }}</div>
+                                    <div class="track-artist-sub">{{ track.artist_name }}</div>
+                                </div>
+                            </td>
+                            
+                            <td>{{ track.album_name }}</td>
+                            
+                            <td class="track-actions-col">
+                                <button class="btn-icon active" data-action="like-track" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex;">
+                                    <i class="fas fa-heart text-success"></i>
+                                </button>
+                                <button class="btn-icon" data-action="add-to-playlist" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex;">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                
+                                <!-- Make Ringtone -->
+                                {% if track.preview_url %}
+                                    <a href="{% url 'ringtone_maker' %}?track_id={{ track.spotify_track_id }}&preview_url={{ track.preview_url|urlencode }}&title={{ track.track_name|urlencode }}&artist={{ track.artist_name|urlencode }}&image={{ track.album_image|urlencode }}" class="btn-icon" title="Make Ringtone" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex; align-items:center; justify-content:center; color:inherit;">
+                                        <i class="fas fa-cut"></i>
+                                    </a>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="track-duration-col">{{ track.duration_str }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div style="text-align: center; padding: 80px 20px; color: var(--text-muted);">
+                <i class="fas fa-heart" style="font-size: 36px; margin-bottom:16px; color:#2a2a2a;"></i>
+                <h3>Songs you like will appear here</h3>
+                <p style="font-size: 13px; margin-top:8px;">Save songs by clicking the heart icon across the app.</p>
+                <a href="{% url 'search' %}" class="btn-primary" style="display:inline-flex; margin-top: 16px; padding: 10px 24px;">Find Songs</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 3. Liked Albums Tab -->
+    <div class="tab-content" id="liked-albums-tab">
+        <div class="media-grid">
+            {% for album in liked_albums %}
+                <a href="/album/{{ album.spotify_album_id }}/?name={{ album.album_name|urlencode }}&artist={{ album.artist_name|urlencode }}&image={{ album.album_image|urlencode }}" class="media-card">
+                    <div class="card-image-wrapper">
+                        {% if album.album_image %}
+                            <img class="card-image" src="{{ album.album_image }}" alt="{{ album.album_name }}">
+                        {% else %}
+                            <img class="card-image" src="https://picsum.photos/300" alt="{{ album.album_name }}">
+                        {% endif %}
+                    </div>
+                    <div class="card-title">{{ album.album_name }}</div>
+                    <div class="card-subtitle">{{ album.artist_name }} &bull; Album</div>
+                </a>
+            {% empty %}
+                <div style="grid-column: 1/-1; text-align: center; padding: 80px 20px; color: var(--text-muted);">
+                    <i class="fas fa-record-vinyl" style="font-size: 36px; margin-bottom:16px; color:#2a2a2a;"></i>
+                    <h3>Albums you save will appear here</h3>
+                    <a href="{% url 'search' %}" class="btn-secondary" style="display:inline-flex; margin-top:16px;">Browse Albums</a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 4. Saved Artists Tab -->
+    <div class="tab-content" id="saved-artists-tab">
+        <div class="media-grid">
+            {% for artist in saved_artists %}
+                <a href="/artist/{{ artist.spotify_artist_id }}/?name={{ artist.artist_name|urlencode }}" class="media-card">
+                    <div class="card-image-wrapper" style="border-radius: 50%;">
+                        {% if artist.artist_image %}
+                            <img class="card-image" src="{{ artist.artist_image }}" alt="{{ artist.artist_name }}" style="border-radius: 50%;">
+                        {% else %}
+                            <img class="card-image" src="https://picsum.photos/300" alt="{{ artist.artist_name }}" style="border-radius: 50%;">
+                        {% endif %}
+                    </div>
+                    <div class="card-title" style="text-align: center;">{{ artist.artist_name }}</div>
+                    <div class="card-subtitle" style="text-align: center;">Artist</div>
+                </a>
+            {% empty %}
+                <div style="grid-column: 1/-1; text-align: center; padding: 80px 20px; color: var(--text-muted);">
+                    <i class="fas fa-users" style="font-size: 36px; margin-bottom:16px; color:#2a2a2a;"></i>
+                    <h3>Artists you follow will appear here</h3>
+                    <a href="{% url 'search' %}" class="btn-secondary" style="display:inline-flex; margin-top:16px;">Find Artists</a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 5. Recently Played Tab -->
+    <div class="tab-content" id="recently-played-tab">
+        {% if recently_played %}
+            <table class="tracks-table">
+                <thead>
+                    <tr>
+                        <th class="track-index-col">#</th>
+                        <th>Title</th>
+                        <th>Album</th>
+                        <th class="track-actions-col"></th>
+                        <th class="track-duration-col"><i class="far fa-clock"></i></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for track in recently_played %}
+                        <tr data-track-id="{{ track.spotify_track_id }}" 
+                            data-track-name="{{ track.track_name }}" 
+                            data-track-artist="{{ track.artist_name }}" 
+                            data-track-album="{{ track.album_name }}" 
+                            data-track-art="{{ track.album_image }}" 
+                            data-track-duration="{{ track.duration_ms }}" 
+                            data-track-preview="{{ track.preview_url|default:'' }}">
+                            
+                            <td class="track-index-col">
+                                <span class="index-number">{{ forloop.counter }}</span>
+                                {% if track.preview_url %}
+                                    <i class="fas fa-play play-icon-table" data-action="play-track"></i>
+                                {% else %}
+                                    <i class="fas fa-play play-icon-table" style="opacity:0.3;cursor:not-allowed;" title="Preview not available"></i>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="track-title-cell text-primary">
+                                {% if track.album_image %}
+                                    <img class="track-thumbnail" src="{{ track.album_image }}" alt="">
+                                {% endif %}
+                                <div>
+                                    <div class="track-name-main">{{ track.track_name }}</div>
+                                    <div class="track-artist-sub">{{ track.artist_name }}</div>
+                                </div>
+                            </td>
+                            
+                            <td>{{ track.album_name }}</td>
+                            
+                            <td class="track-actions-col">
+                                <button class="btn-icon" data-action="like-track" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex;">
+                                    <i class="far fa-heart"></i> <!-- Handled dynamically on load -->
+                                </button>
+                                <button class="btn-icon" data-action="add-to-playlist" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex;">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                
+                                <!-- Make Ringtone -->
+                                {% if track.preview_url %}
+                                    <a href="{% url 'ringtone_maker' %}?track_id={{ track.spotify_track_id }}&preview_url={{ track.preview_url|urlencode }}&title={{ track.track_name|urlencode }}&artist={{ track.artist_name|urlencode }}&image={{ track.album_image|urlencode }}" class="btn-icon" title="Make Ringtone" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex; align-items:center; justify-content:center; color:inherit;">
+                                        <i class="fas fa-cut"></i>
+                                    </a>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="track-duration-col">{{ track.duration_str }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+
+    <!-- 6. Saved Shows Tab -->
+    <div class="tab-content" id="saved-shows-tab">
+        <div class="media-grid">
+            {% for show in saved_shows %}
+                <a href="{% url 'podcast_detail' show.spotify_show_id %}" class="media-card">
+                    <div class="card-image-wrapper">
+                        {% if show.show_image %}
+                            <img class="card-image" src="{{ show.show_image }}" alt="{{ show.show_name }}">
+                        {% else %}
+                            <img class="card-image" src="https://picsum.photos/id/1025/300/300" alt="{{ show.show_name }}">
+                        {% endif %}
+                    </div>
+                    <div class="card-title">{{ show.show_name }}</div>
+                    <div class="card-subtitle">
+                        {% if show.publisher and show.publisher != "None" %}
+                            Podcast &bull; By {{ show.publisher }}
+                        {% else %}
+                            Podcast
+                        {% endif %}
+                    </div>
+
+
+                </a>
+            {% empty %}
+                <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                    <i class="fas fa-podcast" style="font-size: 36px; margin-bottom:16px; color:#2a2a2a;"></i>
+                    <h3>No followed podcasts yet</h3>
+                    <p style="font-size:13px; margin: 8px 0 16px;">Follow podcasts to add them to your library.</p>
+                    <a href="{% url 'podcasts' %}" class="btn-primary" style="display:inline-flex;">Browse Podcasts</a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 7. My Creations Tab -->
+    <div class="tab-content" id="my-creations-tab">
+        <div style="display:flex; justify-content:flex-end; margin-bottom: 20px;">
+            <a href="{% url 'music_maker' %}" class="btn-primary">
+                <i class="fas fa-plus"></i> Open Song Studio
+            </a>
+        </div>
+        
+        <div class="media-grid">
+            {% for song in custom_songs %}
+                <div class="media-card" style="position: relative;">
+                    <div class="card-image-wrapper" style="background: linear-gradient(135deg, #1db954 0%, #191414 100%); display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-sliders-h" style="font-size: 48px; color: #fff; opacity: 0.85;"></i>
+                    </div>
+                    <div class="card-title">{{ song.title }}</div>
+                    <div class="card-subtitle">Song Studio &bull; {{ song.bpm }} BPM</div>
+                    
+                    <div style="display: flex; gap: 8px; margin-top: 12px; width: 100%;">
+                        <a href="{% url 'music_maker' %}?song_id={{ song.id }}" class="btn-primary" style="flex: 1; padding: 6px; font-size: 11px; justify-content: center; text-align: center; border-radius: 4px;">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <button class="btn-outline btn-delete-creation" data-song-id="{{ song.id }}" style="padding: 6px 10px; font-size: 11px; border-radius: 4px; color: #ff5c5c; border-color: rgba(255,92,92,0.3); background: transparent; cursor: pointer;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            {% empty %}
+                <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                    <i class="fas fa-sliders-h" style="font-size: 36px; margin-bottom:16px; color:#2a2a2a;"></i>
+                    <h3>Create your first song</h3>
+                    <p style="font-size:13px; margin: 8px 0 16px;">Make your own beats, melodies, and export them as WAV!</p>
+                    <a href="{% url 'music_maker' %}" class="btn-primary" style="display:inline-flex;">Open Song Studio</a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+{% block extra_js %}
+<script>
+    // Pure Vanilla JS tab navigation switcher
+    function switchTab(tabId, btn) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        // Remove active class from buttons
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.classList.remove('active');
+        });
+        
+        // Show selected tab content and active button
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        // Auto-switch tab if tab parameter is specified in the URL query
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam) {
+            const targetBtn = document.querySelector(`[onclick*='${tabParam}-tab']`);
+            if (targetBtn) {
+                targetBtn.click();
+            }
+        }
+
+        const playLikedBtn = document.getElementById('play-liked-btn');
+        if (playLikedBtn) {
+            playLikedBtn.addEventListener('click', () => {
+                const likedTab = document.getElementById('liked-songs-tab');
+                const rows = likedTab.querySelectorAll('tr[data-track-id]');
+                if (rows.length > 0) {
+                    const tracksList = [];
+                    rows.forEach(row => {
+                        tracksList.push({
+                            id: row.dataset.trackId,
+                            name: row.dataset.trackName,
+                            artist: row.dataset.trackArtist,
+                            album: row.dataset.trackAlbum,
+                            album_art: row.dataset.trackArt,
+                            duration_ms: parseInt(row.dataset.trackDuration || 0),
+                            preview_url: row.dataset.trackPreview || ''
+                        });
+                    });
+                    window.player.setQueue(tracksList, 0);
+                    window.player.play();
+                }
+            });
+        }
+
+        // AJAX custom song deletion handler
+        document.querySelectorAll('.btn-delete-creation').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const songId = btn.dataset.songId;
+                if (!confirm("Are you sure you want to delete this song?")) return;
+                
+                try {
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+                    const response = await fetch(`/api/delete-custom-song/${songId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        btn.closest('.media-card').remove();
+                        if (window.player) {
+                            window.player.showNotification("Song deleted successfully!", "success");
+                        }
+                        // Check if no creations are left, and show empty state if so
+                        const creationsTab = document.getElementById('my-creations-tab');
+                        const grid = creationsTab.querySelector('.media-grid');
+                        if (grid && grid.querySelectorAll('.media-card').length === 0) {
+                            grid.innerHTML = `
+                                <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                                    <i class="fas fa-sliders-h" style="font-size: 36px; margin-bottom:16px; color:#2a2a2a;"></i>
+                                    <h3>Create your first song</h3>
+                                    <p style="font-size:13px; margin: 8px 0 16px;">Make your own beats, melodies, and export them as WAV!</p>
+                                    <a href="/music-maker/" class="btn-primary" style="display:inline-flex;">Open Song Studio</a>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        alert("Failed to delete song: " + (data.error || "Unknown error"));
+                    }
+                } catch (err) {
+                    console.error("Delete song error:", err);
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}

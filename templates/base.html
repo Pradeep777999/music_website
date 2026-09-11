@@ -1,0 +1,860 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Nexonic - Premium Spotify Clone{% endblock %}</title>
+    
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=20260712_v3">
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Theme FOUC prevention script -->
+    <script>
+        (function() {
+            var theme = localStorage.getItem('theme');
+            if (theme === 'light') {
+                document.documentElement.classList.add('light-theme');
+            }
+        })();
+    </script>
+</head>
+<body>
+    <!-- CSRF Token helper for AJAX player fetch requests -->
+    {% csrf_token %}
+
+    <!-- Alert Notifications container -->
+    <div id="toast-container" class="messages-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message-alert {{ message.tags }}">
+                    <span>{{ message }}</span>
+                    <span class="message-close" onclick="this.parentNode.remove()">&times;</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Mobile Navigation Sidebar -->
+    <div id="mobile-sidebar" class="mobile-sidebar" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Mobile Navigation Menu">
+        <div class="mobile-sidebar-header">
+            <div class="mobile-sidebar-brand">
+                <div class="sidebar-brand-logo">N</div>
+                <span class="mobile-sidebar-brand-text">Nexonic</span>
+            </div>
+            <button id="mobile-sidebar-close" class="mobile-sidebar-close-btn" aria-label="Close menu">&times;</button>
+        </div>
+
+        <div class="mobile-sidebar-content">
+            <nav class="mobile-sidebar-nav">
+                <ul class="mobile-menu-list">
+                    <li class="mobile-menu-item">
+                        <a href="{% url 'home' %}" class="mobile-menu-link {% if request.path == '/' %}active{% endif %}">
+                            <i class="fas fa-home"></i>
+                            <span class="mobile-menu-text">Home</span>
+                        </a>
+                    </li>
+                    <li class="mobile-menu-item">
+                        <a href="{% url 'search' %}" class="mobile-menu-link {% if '/search/' in request.path %}active{% endif %}">
+                            <i class="fas fa-search"></i>
+                            <span class="mobile-menu-text">Search</span>
+                        </a>
+                    </li>
+                    <li class="mobile-menu-item">
+                        <a href="{% url 'library' %}" class="mobile-menu-link {% if '/library/' in request.path and 'tab=liked-songs' not in request.get_full_path %}active{% endif %}">
+                            <i class="fas fa-bookmark"></i>
+                            <span class="mobile-menu-text">Your Library</span>
+                        </a>
+                    </li>
+                    <li class="mobile-menu-item">
+                        <a href="{% url 'podcasts' %}" class="mobile-menu-link {% if '/podcasts/' in request.path or '/podcast/' in request.path %}active{% endif %}">
+                            <i class="fas fa-podcast"></i>
+                            <span class="mobile-menu-text">Podcasts</span>
+                        </a>
+                    </li>
+                    <li class="mobile-menu-item">
+                        <a href="{% url 'ringtone_maker' %}" class="mobile-menu-link {% if '/ringtone-maker/' in request.path %}active{% endif %}">
+                            <i class="fas fa-cut"></i>
+                            <span class="mobile-menu-text">Ringtone Maker</span>
+                        </a>
+                    </li>
+                    <li class="mobile-menu-item">
+                        <a href="{% url 'music_maker' %}" class="mobile-menu-link {% if '/music-maker/' in request.path %}active{% endif %}">
+                            <i class="fas fa-sliders-h"></i>
+                            <span class="mobile-menu-text">Song Studio</span>
+                        </a>
+                    </li>
+                    <li class="mobile-menu-item">
+                        <a href="{% url 'create_playlist' %}" class="mobile-menu-link">
+                            <i class="fas fa-plus-square"></i>
+                            <span class="mobile-menu-text">Create Playlist</span>
+                        </a>
+                    </li>
+                    <li class="mobile-menu-item">
+                        <a href="{% url 'library' %}?tab=liked-songs" class="mobile-menu-link {% if 'tab=liked-songs' in request.get_full_path %}active{% endif %}">
+                            <i class="fas fa-heart"></i>
+                            <span class="mobile-menu-text">Liked Songs</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <div class="mobile-sidebar-footer">
+            <div class="sidebar-divider" style="margin: 8px 0 16px 0;"></div>
+            <ul class="mobile-menu-list">
+                <li class="mobile-menu-item">
+                    <a href="{% url 'settings' %}" class="mobile-menu-link {% if '/settings/' in request.path %}active{% endif %}">
+                        <i class="fas fa-cog"></i>
+                        <span class="mobile-menu-text">Settings</span>
+                    </a>
+                </li>
+                <li class="mobile-menu-item">
+                    <a href="#" class="mobile-menu-link">
+                        <i class="fas fa-question-circle"></i>
+                        <span class="mobile-menu-text">Help</span>
+                    </a>
+                </li>
+                <li class="mobile-menu-item">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'logout' %}" class="mobile-menu-link">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span class="mobile-menu-text">Logout</span>
+                        </a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="mobile-menu-link">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span class="mobile-menu-text">Login / Register</span>
+                        </a>
+                    {% endif %}
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Dark Overlay -->
+    <div id="mobile-overlay" class="mobile-overlay" aria-hidden="true"></div>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-logo">N</div>
+                <div class="sidebar-brand-text">Nexonic</div>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li class="sidebar-item">
+                    <a href="{% url 'home' %}" class="sidebar-link {% if request.path == '/' %}active{% endif %}">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{% url 'search' %}" class="sidebar-link {% if '/search/' in request.path %}active{% endif %}">
+                        <i class="fas fa-search"></i>
+                        <span>Search</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{% url 'library' %}" class="sidebar-link {% if '/library/' in request.path %}active{% endif %}">
+                        <i class="fas fa-bookmark"></i>
+                        <span>Your Library</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{% url 'podcasts' %}" class="sidebar-link {% if '/podcasts/' in request.path or '/podcast/' in request.path %}active{% endif %}">
+                        <i class="fas fa-podcast"></i>
+                        <span>Podcasts</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{% url 'ringtone_maker' %}" class="sidebar-link {% if '/ringtone-maker/' in request.path %}active{% endif %}">
+                        <i class="fas fa-cut"></i>
+                        <span>Ringtone Maker</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{% url 'music_maker' %}" class="sidebar-link {% if '/music-maker/' in request.path %}active{% endif %}">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>Song Studio</span>
+                    </a>
+                </li>
+            </ul>
+
+
+
+            <div class="sidebar-divider"></div>
+
+            <ul class="sidebar-menu">
+                <li class="sidebar-item">
+                    <a href="{% url 'create_playlist' %}" class="sidebar-link">
+                        <i class="fas fa-plus-square"></i>
+                        <span>Create Playlist</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{% url 'library' %}?tab=liked-songs" class="sidebar-link">
+                        <i class="fas fa-heart"></i>
+                        <span>Liked Songs</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-divider"></div>
+
+            <!-- User Playlists sidebar navigation list -->
+            <div class="sidebar-playlists-container">
+                <div class="sidebar-playlists-header">
+                    <span>Playlists</span>
+                </div>
+                <ul class="sidebar-playlists-list" id="sidebar-playlists-ul">
+                    {% if user.is_authenticated %}
+                        {% for pl in user.playlists.all %}
+                            <li>
+                                <a href="{% url 'playlist_detail' pl.id %}" class="sidebar-playlist-link">
+                                    {{ pl.name }}
+                                </a>
+                            </li>
+                        {% empty %}
+                            <li style="padding: 8px 16px; font-size: 11px; color: var(--text-muted);">
+                                No playlists yet.
+                            </li>
+                        {% endfor %}
+                    {% endif %}
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-view">
+            <!-- Header bar -->
+            <header class="header {% if '/search/' in request.path %}has-search{% endif %}">
+                <!-- Mobile specific elements (hidden on desktop) -->
+                <button class="mobile-hamburger-btn" id="mobile-hamburger" aria-label="Open navigation menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="mobile-logo-container">
+                    <div class="sidebar-brand-logo">N</div>
+                    <span class="mobile-logo-text">Nexonic</span>
+                </div>
+
+                <div class="header-left">
+                    <div class="nav-buttons">
+                        <button class="nav-btn" onclick="history.back()"><i class="fas fa-chevron-left"></i></button>
+                        <button class="nav-btn" onclick="history.forward()"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    
+                    <!-- Search Input (Only shown on search pages) -->
+                    {% if '/search/' in request.path %}
+                        <div class="search-bar-container">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" class="search-input" placeholder="What do you want to listen to?" value="{{ request.GET.q|default:'' }}" autofocus autocomplete="off">
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="header-right">
+                    <!-- Theme Toggle Button -->
+                    <button id="header-theme-toggle" class="nav-btn" style="margin-right: 12px;" title="Toggle Theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    
+                    {% if user.is_authenticated %}
+                        <div class="user-profile-menu" onclick="document.getElementById('profile-dropdown').classList.toggle('show')">
+                            {% if user.profile.avatar %}
+                                <img class="user-avatar-small" src="{{ user.profile.avatar.url }}" alt="">
+                            {% else %}
+                                <img class="user-avatar-small" src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="">
+                            {% endif %}
+                            <span class="user-display-name">{{ user.username }}</span>
+                            <i class="fas fa-caret-down" style="font-size:11px;"></i>
+                            
+                            <!-- Profile dropdown list -->
+                            <div class="profile-dropdown" id="profile-dropdown">
+                                <a href="{% url 'profile' %}" class="dropdown-link"><i class="fas fa-user-edit" style="width:18px;"></i> Profile</a>
+                                <a href="{% url 'settings' %}" class="dropdown-link"><i class="fas fa-cog" style="width:18px;"></i> Settings</a>
+                                <a href="{% url 'change_password' %}" class="dropdown-link"><i class="fas fa-key" style="width:18px;"></i> Security</a>
+                                <div class="dropdown-divider"></div>
+                                <a href="{% url 'logout' %}" class="dropdown-link"><i class="fas fa-sign-out-alt" style="width:18px;"></i> Log Out</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn-primary" style="padding: 8px 24px; font-size:13px;">Log In</a>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- Scrollable page viewport -->
+            <div class="content-scrollable">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Persistent Music Player bottom sticky bar -->
+    <footer class="bottom-player">
+        <!-- Playing track artwork & titles -->
+        <div class="player-left">
+            <img class="player-track-art" id="player-art" src="https://picsum.photos/id/1043/100/100" alt="">
+            <div class="player-track-info">
+                <div class="player-track-title" id="player-title">Welcome to Nexonic</div>
+                <div class="player-track-artist" id="player-artist">Select a song to play</div>
+            </div>
+            <button class="ctrl-btn" id="player-like" style="font-size:14px;margin-left:8px;"><i class="far fa-heart"></i></button>
+            <button class="ctrl-btn" id="player-add-playlist" style="font-size:14px;"><i class="fas fa-plus"></i></button>
+        </div>
+
+        <!-- Center Audio timeline seeking slider and control play/next button shortcuts -->
+        <div class="player-mid">
+            <div class="player-controls">
+                <button class="ctrl-btn" id="player-shuffle" title="Shuffle"><i class="fas fa-random"></i></button>
+                <button class="ctrl-btn" id="player-prev" title="Previous"><i class="fas fa-step-backward"></i></button>
+                <button class="ctrl-btn play-pause-btn" id="player-play-pause" title="Play/Pause"><i class="fas fa-play"></i></button>
+                <button class="ctrl-btn" id="player-next" title="Next"><i class="fas fa-step-forward"></i></button>
+                <button class="ctrl-btn" id="player-repeat" title="Repeat"><i class="fas fa-redo"></i></button>
+
+                <!-- Sleep Timer Control Button -->
+                <div class="sleep-timer-container" style="position: relative; display: inline-flex; align-items: center;">
+                    <button class="ctrl-btn" id="player-sleep-timer-btn" title="Sleep Timer">
+                        <i class="far fa-clock"></i>
+                        <span id="sleepTimerBadge" class="sleep-badge" style="display: none;"></span>
+                    </button>
+
+                    <!-- Exact Screenshot-Matched Sleep Timer Modal -->
+                    <div id="sleepTimerMenu" class="sleep-timer-modal-card" style="display: none;">
+                        <div class="st-header">
+                            <div class="st-title"><i class="far fa-clock" style="margin-right: 8px;"></i>Sleep Timer</div>
+                            <button id="stCloseBtn" class="st-close-btn">&times;</button>
+                        </div>
+
+                        <!-- Active Timer Banner -->
+                        <div id="stActiveBanner" class="st-active-banner" style="display: none;">
+                            <div class="st-active-label">ACTIVE TIMER</div>
+                            <div id="stCountdownDisplay" class="st-countdown-digits">00:00</div>
+                            <button id="stCancelBannerBtn" class="st-cancel-btn">Cancel Timer</button>
+                        </div>
+
+                        <!-- Preset Duration List -->
+                        <div class="st-preset-list">
+                            <button class="st-preset-card" data-mins="5">5 Minutes</button>
+                            <button class="st-preset-card" data-mins="10">10 Minutes</button>
+                            <button class="st-preset-card" data-mins="15">15 Minutes</button>
+                            <button class="st-preset-card" data-mins="30">30 Minutes</button>
+                            <button class="st-preset-card" data-mins="45">45 Minutes</button>
+                            <button class="st-preset-card" data-mins="60">1 Hour</button>
+                            <button class="st-preset-card" data-mins="end_of_song">End of Current Song</button>
+                        </div>
+
+                        <!-- Custom Time Section -->
+                        <div class="st-custom-section">
+                            <div class="st-custom-label">Custom Time (Minutes)</div>
+                            <div class="st-custom-row">
+                                <input type="number" id="stCustomInput" class="st-custom-input" placeholder="Min" min="1" max="600">
+                                <button id="stCustomStartBtn" class="st-custom-start-btn">Start</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="player-timeline">
+                <span id="player-current-time">0:00</span>
+                <div class="timeline-slider-container" id="player-timeline-container">
+                    <div class="timeline-slider-fill" id="player-timeline-fill"></div>
+                </div>
+                <span id="player-total-time">0:00</span>
+            </div>
+        </div>
+
+        <!-- Right Side elements like volume modifiers and queue drawer selectors -->
+        <div class="player-right">
+            <button class="ctrl-btn" id="player-queue-toggle" title="Queue" style="font-size:13px;"><i class="fas fa-list-ul"></i></button>
+            <div class="volume-controls">
+                <button class="ctrl-btn" id="player-volume-icon" style="padding:0;"><i class="fas fa-volume-up"></i></button>
+                <div class="volume-slider-container" id="player-volume-container">
+                    <div class="volume-slider-fill" id="player-volume-fill"></div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Add To Playlist Dialog Modal -->
+    <div class="playlist-modal" id="add-playlist-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add to Playlist</h3>
+                <span class="modal-close" id="modal-close-btn">&times;</span>
+            </div>
+            <div class="modal-list" id="modal-playlists-list">
+                <!-- Playlists dynamically rendered by Javascript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Audio Queue drawer panel -->
+    <div class="queue-panel" id="queue-drawer">
+        <div class="queue-header">
+            <h3 class="queue-title">Play Queue</h3>
+        </div>
+        <div class="queue-items" id="queue-drawer-items">
+            <!-- Queue items rendered by Javascript -->
+        </div>
+    </div>
+
+    <!-- Core Player Javascript module -->
+    <script id="spotify-connection-status" type="application/json">{% if request.session.spotify_token_info %}true{% else %}false{% endif %}</script>
+    <script>
+        window.isSpotifyConnected = document.getElementById('spotify-connection-status').textContent.trim() === 'true';
+    </script>
+    {% if request.session.spotify_token_info %}
+        <script src="https://sdk.scdn.co/spotify-player.js" async></script>
+    {% endif %}
+    <!-- Theme Logic script -->
+    <script src="{% static 'js/theme.js' %}?v=1.0.2"></script>
+    <script src="{% static 'js/player.js' %}?v=20260712_v3"></script>
+    
+    <!-- Search Javascript module (conditionally loaded on search page) -->
+    {% if '/search/' in request.path %}
+        <script src="{% static 'js/search.js' %}?v=20260712_v3"></script>
+    {% endif %}
+
+    {% block extra_js %}{% endblock %}
+
+    <!-- Screenshot-Matched Sleep Timer CSS & JS -->
+    <style>
+        .sleep-timer-modal-card {
+            position: absolute;
+            bottom: 56px;
+            right: 0;
+            width: 320px;
+            background: rgba(15, 12, 28, 0.97);
+            border: 1px solid rgba(168, 85, 247, 0.35);
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: 0 24px 50px rgba(0, 0, 0, 0.95), 0 0 30px rgba(168, 85, 247, 0.15);
+            backdrop-filter: blur(32px);
+            z-index: 10000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .st-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .st-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #FFF;
+            display: flex;
+            align-items: center;
+        }
+
+        .st-close-btn {
+            background: none;
+            border: none;
+            color: #94A3B8;
+            font-size: 1.4rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 4px;
+        }
+
+        .st-close-btn:hover {
+            color: #FFF;
+        }
+
+        .st-active-banner {
+            background: rgba(45, 21, 68, 0.85);
+            border: 1px solid rgba(168, 85, 247, 0.45);
+            border-radius: 16px;
+            padding: 14px;
+            text-align: center;
+            margin-bottom: 14px;
+            box-shadow: inset 0 0 20px rgba(168, 85, 247, 0.15);
+        }
+
+        .st-active-label {
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: #C084FC;
+            margin-bottom: 4px;
+        }
+
+        .st-countdown-digits {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: #FFF;
+            margin-bottom: 8px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .st-cancel-btn {
+            background: rgba(239, 68, 68, 0.22);
+            border: 1px solid rgba(239, 68, 68, 0.45);
+            color: #F87171;
+            border-radius: 999px;
+            padding: 6px 18px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .st-cancel-btn:hover {
+            background: #EF4444;
+            color: #FFF;
+        }
+
+        .st-preset-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            margin-bottom: 14px;
+            padding-right: 2px;
+        }
+
+        .st-preset-card {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #F1F5F9;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .st-preset-card:hover, .st-preset-card.active {
+            background: rgba(168, 85, 247, 0.18);
+            border-color: #A855F7;
+            color: #FFF;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
+        }
+
+        .st-custom-section {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 12px;
+        }
+
+        .st-custom-label {
+            font-size: 0.76rem;
+            font-weight: 600;
+            color: #94A3B8;
+            margin-bottom: 8px;
+        }
+
+        .st-custom-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .st-custom-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 10px;
+            padding: 9px 12px;
+            color: #FFF;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .st-custom-input:focus {
+            border-color: #A855F7;
+        }
+
+        .st-custom-start-btn {
+            background: #A855F7;
+            border: none;
+            border-radius: 10px;
+            padding: 9px 18px;
+            color: #FFF;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .st-custom-start-btn:hover {
+            background: #9333EA;
+        }
+
+        .sleep-badge {
+            position: absolute;
+            top: -4px;
+            right: -8px;
+            background: linear-gradient(135deg, #A855F7, #FF007F);
+            color: #FFF;
+            font-size: 8px;
+            font-weight: 800;
+            padding: 2px 5px;
+            border-radius: 999px;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.7);
+        }
+
+        #player-sleep-timer-btn.active {
+            color: #A855F7;
+            text-shadow: 0 0 14px #A855F7;
+        }
+    </style>
+    <script>
+    (function() {
+        const timerBtn = document.getElementById('player-sleep-timer-btn');
+        const timerMenu = document.getElementById('sleepTimerMenu');
+        const closeBtn = document.getElementById('stCloseBtn');
+        const activeBanner = document.getElementById('stActiveBanner');
+        const countdownDisplay = document.getElementById('stCountdownDisplay');
+        const cancelBannerBtn = document.getElementById('stCancelBannerBtn');
+        const badge = document.getElementById('sleepTimerBadge');
+        const customInput = document.getElementById('stCustomInput');
+        const customStartBtn = document.getElementById('stCustomStartBtn');
+
+        if (!timerBtn || !timerMenu) return;
+
+        let sleepInterval = null;
+        let totalSecondsRemaining = 0;
+
+        timerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            timerMenu.style.display = timerMenu.style.display === 'flex' ? 'none' : 'flex';
+        });
+
+        closeBtn.addEventListener('click', () => {
+            timerMenu.style.display = 'none';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!timerBtn.contains(e.target) && !timerMenu.contains(e.target)) {
+                timerMenu.style.display = 'none';
+            }
+        });
+
+        function clearSleepTimer() {
+            if (sleepInterval) clearInterval(sleepInterval);
+            sleepInterval = null;
+            totalSecondsRemaining = 0;
+            window.sleepTimerEndOfSongActive = false;
+            badge.style.display = 'none';
+            timerBtn.classList.remove('active');
+            activeBanner.style.display = 'none';
+            timerMenu.querySelectorAll('.st-preset-card').forEach(c => c.classList.remove('active'));
+        }
+
+        function triggerSleepTimerCompletion(msg) {
+            clearSleepTimer();
+            if (window.player) {
+                if (window.player.audio && !window.player.audio.paused) {
+                    try { window.player.audio.pause(); } catch(e) {}
+                }
+                if (window.player.currentIndex >= 0 && window.player.queue && window.player.queue[window.player.currentIndex]) {
+                    try { window.player.updatePlayerUI(window.player.queue[window.player.currentIndex], false); } catch(e) {}
+                }
+                if (window.player.showNotification) {
+                    window.player.showNotification(msg || "Sleep timer ended. Playback paused. 🌙", "info");
+                }
+            }
+        }
+
+        window.triggerSleepTimerEnd = () => {
+            triggerSleepTimerCompletion("Sleep timer ended at end of current song. Playback paused. 🌙");
+        };
+
+        function setSleepTimerBySeconds(seconds, isEndOfSong = false) {
+            clearSleepTimer();
+            totalSecondsRemaining = Math.max(1, Math.floor(seconds));
+            if (isEndOfSong) {
+                window.sleepTimerEndOfSongActive = true;
+            }
+            timerBtn.classList.add('active');
+            badge.style.display = 'inline-block';
+            activeBanner.style.display = 'block';
+
+            updateCountdownDisplay();
+            sleepInterval = setInterval(() => {
+                if (isEndOfSong && window.player && window.player.audio && !isNaN(window.player.audio.duration) && window.player.audio.duration > 0) {
+                    const liveRemain = Math.max(0, Math.round(window.player.audio.duration - (window.player.audio.currentTime || 0)));
+                    totalSecondsRemaining = liveRemain;
+                    if (totalSecondsRemaining <= 0) {
+                        window.triggerSleepTimerEnd();
+                    } else {
+                        updateCountdownDisplay();
+                    }
+                } else {
+                    totalSecondsRemaining--;
+                    if (totalSecondsRemaining <= 0) {
+                        triggerSleepTimerCompletion("Sleep timer ended. Playback paused. 🌙");
+                    } else {
+                        updateCountdownDisplay();
+                    }
+                }
+            }, 1000);
+        }
+
+        function setSleepTimer(minutes, labelText) {
+            setSleepTimerBySeconds(minutes * 60, false);
+        }
+
+        function updateCountdownDisplay() {
+            const mins = Math.floor(totalSecondsRemaining / 60);
+            const secs = totalSecondsRemaining % 60;
+            const formatted = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+            countdownDisplay.textContent = formatted;
+            badge.textContent = Math.ceil(totalSecondsRemaining / 60) + 'm';
+        }
+
+        cancelBannerBtn.addEventListener('click', () => {
+            clearSleepTimer();
+            if (window.player && window.player.showNotification) {
+                window.player.showNotification("Sleep timer cancelled.", "info");
+            }
+        });
+
+        timerMenu.querySelectorAll('.st-preset-card').forEach(card => {
+            card.addEventListener('click', () => {
+                timerMenu.querySelectorAll('.st-preset-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                const minsAttr = card.getAttribute('data-mins');
+                if (minsAttr === 'end_of_song') {
+                    let remainSec = 0;
+                    if (window.player) {
+                        if (window.player.audio && !isNaN(window.player.audio.duration) && window.player.audio.duration > 0) {
+                            remainSec = Math.max(1, Math.round(window.player.audio.duration - (window.player.audio.currentTime || 0)));
+                        } else if (window.player.currentIndex >= 0 && window.player.queue && window.player.queue[window.player.currentIndex]) {
+                            const track = window.player.queue[window.player.currentIndex];
+                            if (track.duration_ms > 0) {
+                                remainSec = Math.max(1, Math.round((track.duration_ms / 1000) - (window.player.audio ? (window.player.audio.currentTime || 0) : 0)));
+                            }
+                        }
+                    }
+                    if (remainSec <= 0) remainSec = 180;
+                    setSleepTimerBySeconds(remainSec, true);
+                } else {
+                    setSleepTimer(parseInt(minsAttr, 10), minsAttr + " Minutes");
+                }
+            });
+        });
+
+        customStartBtn.addEventListener('click', () => {
+            const val = parseInt(customInput.value, 10);
+            if (!isNaN(val) && val > 0) {
+                setSleepTimer(val, val + " Minutes");
+                customInput.value = '';
+            }
+        });
+    })();
+    </script>
+
+    <!-- Sony AI Global Robo Orb & Voice Assistant -->
+    {% include 'music/sony_ai_widget.html' %}
+
+    <!-- Mobile Sidebar Interaction, Ripple Effects, and Focus Trap Accessibility -->
+    <script>
+    (function() {
+        const hamburger = document.getElementById('mobile-hamburger');
+        const sidebar = document.getElementById('mobile-sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+        const closeBtn = document.getElementById('mobile-sidebar-close');
+        let lastFocusedElement = null;
+
+        if (!hamburger || !sidebar || !overlay || !closeBtn) return;
+
+        function openSidebar() {
+            lastFocusedElement = document.activeElement;
+            sidebar.classList.add('open');
+            overlay.classList.add('active');
+            sidebar.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden'; // Stop background scrolling
+            
+            // Focus Close Button
+            setTimeout(() => closeBtn.focus(), 50);
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+            sidebar.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = ''; // Restore scrolling
+            
+            if (lastFocusedElement) {
+                lastFocusedElement.focus();
+            }
+        }
+
+        // Event listeners
+        hamburger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openSidebar();
+        });
+        closeBtn.addEventListener('click', closeSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        // Escape Key Closes Sidebar
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+                closeSidebar();
+            }
+            
+            // Focus Trapping
+            if (e.key === 'Tab' && sidebar.classList.contains('open')) {
+                const focusables = sidebar.querySelectorAll('a, button, input, [tabindex="0"]');
+                if (focusables.length === 0) return;
+                const first = focusables[0];
+                const last = focusables[focusables.length - 1];
+                
+                if (e.shiftKey) {
+                    if (document.activeElement === first) {
+                        last.focus();
+                        e.preventDefault();
+                    }
+                } else {
+                    if (document.activeElement === last) {
+                        first.focus();
+                        e.preventDefault();
+                    }
+                }
+            }
+        });
+
+        // Click Ripple Animation for Sidebar Menu Items
+        sidebar.querySelectorAll('.mobile-menu-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Ensure ripple container works relative to menu link
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                
+                const ripple = document.createElement('span');
+                ripple.className = 'ripple';
+                ripple.style.width = ripple.style.height = `${size}px`;
+                
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                ripple.style.left = `${x}px`;
+                ripple.style.top = `${y}px`;
+                
+                this.appendChild(ripple);
+                
+                // Remove ripple element after animation finishes
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+    })();
+    </script>
+</body>
+</html>

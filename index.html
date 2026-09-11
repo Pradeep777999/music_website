@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sony AI Music Assistant — Voice-Activated Corner Dock Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* ==========================================================================
+           1. DESIGN TOKENS & RESET
+           ========================================================================== */
+        :root {
+            /* Rich Electric & Fluid Palette */
+            --electric-blue: #00C6FF;
+            --deep-blue: #0072FF;
+            --vibrant-purple: #7F00FF;
+            --royal-purple: #4A00E0;
+            --neon-pink: #FF007F;
+            --magenta-wave: #E100FF;
+
+            /* Glassmorphism Surface Tokens */
+            --surface-glass: rgba(13, 15, 28, 0.78);
+            --surface-glass-light: rgba(25, 29, 50, 0.65);
+            --border-glass: rgba(255, 255, 255, 0.14);
+            --border-glass-glow: rgba(0, 198, 255, 0.35);
+
+            /* Typography */
+            --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+
+            /* Easing & Animation */
+            --ease-fluid: cubic-bezier(0.22, 1, 0.36, 1);
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: #06070D;
+            color: #E2E8F0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            user-select: none;
+        }
+
+        /* ==========================================================================
+           2. AMBIENT STUDIO BACKGROUND (BACKDROP ENVIRONMENT FOR PROTOTYPE)
+           ========================================================================== */
+        .desktop-environment {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px 60px;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(127, 0, 255, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 85% 75%, rgba(0, 198, 255, 0.1) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(255, 0, 127, 0.05) 0%, transparent 50%),
+                #06070D;
+        }
+
+        .ambient-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+            background-size: 64px 64px;
+            mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.8) 0%, transparent 80%);
+            pointer-events: none;
+        }
+
+        /* Top Header in Studio Backdrop */
+        .studio-navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 10;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .sony-badge {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            background: linear-gradient(135deg, #FFF 0%, #A5B4FC 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sony-subtext {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #64748B;
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+            padding-left: 14px;
+        }
+
+        /* Backdrop Content Showcase */
+        .showcase-content {
+            max-width: 680px;
+            position: relative;
+            z-index: 10;
+            margin-top: -4vh;
+        }
+
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #93C5FD;
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .tag-pill .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00C6FF;
+            box-shadow: 0 0 10px #00C6FF;
+            animation: dotPulse 2s infinite ease-in-out;
+        }
+
+        @keyframes dotPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.35);
+                opacity: 0.6;
+            }
+        }
+
+        .showcase-title {
+            font-family: var(--font-display);
+            font-size: 3.4rem;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 20px;
+        }
+
+        .showcase-title span {
+            background: linear-gradient(135deg, var(--electric-blue) 0%, var(--neon-pink) 50%, var(--vibrant-purple) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% 200%;
+            animation: textGradientShift 8s ease infinite;
+        }
+
+        @keyframes textGradientShift {
+
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .showcase-desc {
+            font-size: 1.05rem;
+            line-height: 1.65;
+            color: #94A3B8;
+            margin-bottom: 36px;
+        }
+
+        /* Interactive Voice Command Guide Chips */
+        .voice-guide-panel {
+            background: rgba(15, 23, 42, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 22px 26px;
+            backdrop-filter: blur(16px);
+        }
+
+        .guide-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #64748B;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .quick-prompts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .prompt-chip {
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 11px 14px;
+            font-size: 0.85rem;
+            color: #CBD5E1;
+            cursor: pointer;
+            transition: all 0.25s var(--ease-fluid);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-align: left;
+        }
+
+        .prompt-chip:hover {
+            background: rgba(0, 198, 255, 0.12);
+            border-color: rgba(0, 198, 255, 0.35);
+            color: #FFF;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 198, 255, 0.15);
+        }
+
+        .prompt-chip .chip-icon {
+            opacity: 0.6;
+            font-size: 1rem;
+            transition: transform 0.25s;
+        }
+
+        .prompt-chip:hover .chip-icon {
+            opacity: 1;
+            transform: scale(1.15);
+        }
+
+        /* ==========================================================================
+           3. CORNER-DOCKED AI MUSIC CHATBOT WIDGET (MAIN REQUIREMENT)
+           ========================================================================== */
+        .sony-ai-dock {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            width: 380px;
+            z-index: 9999;
+            perspective: 1000px;
+            transition: transform 0.35s var(--ease-fluid);
+        }
+
+        /* Liquid Glow Aura Wrapper around the Widget */
+        .glow-aura-wrapper {
+            position: relative;
+            border-radius: 28px;
+            padding: 2px;
+        }
+
+        /* The Animated Liquid Glow Layer */
+        .liquid-glow-layer {
+            position: absolute;
+            inset: -14px;
+            border-radius: 40px;
+            background: linear-gradient(120deg,
+                    var(--electric-blue),
+                    var(--vibrant-purple),
+                    var(--neon-pink),
+                    var(--electric-blue));
+            background-size: 300% 300%;
+            filter: blur(24px);
+            opacity: 0.45;
+            z-index: -1;
+            transition: opacity 0.5s ease, transform 0.5s ease, filter 0.5s ease;
+            animation: liquidFlow 8s ease infinite;
+            will-change: transform, opacity;
+        }
+
+        @keyframes liquidFlow {
+            0% {
+                background-position: 0% 50%;
+                transform: scale(0.98) rotate(0deg);
+            }
+
+            50% {
+                background-position: 100% 50%;
+                transform: scale(1.03) rotate(2deg);
+            }
+
+            100% {
+                background-position: 0% 50%;
+                transform: scale(0.98) rotate(0deg);
+            }
+        }
+
+        /* Main Glass Card Surface */
+        .widget-card {
+            position: relative;
+            background: var(--surface-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 26px;
+            padding: 22px;
+            backdrop-filter: blur(32px) saturate(180%);
+            -webkit-backdrop-filter: blur(32px) saturate(180%);
+            box-shadow:
+                0 24px 50px rgba(0, 0, 0, 0.65),
+                inset 0 1px 1px rgba(255, 255, 255, 0.18);
+            overflow: hidden;
+            transition: all 0.45s var(--ease-fluid);
+        }
+
+        /* Subtle Inner Shimmer */
+        .widget-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.06),
+                    transparent);
+            transition: left 0.8s ease;
+            pointer-events: none;
+        }
+
+        .widget-card:hover::before {
+            left: 100%;
+        }
+
+        /* ==========================================================================
+           4. VISUAL STATE SYSTEM (.idle | .listening | .processing | .playing)
+           ========================================================================== */
+
+        /* STATE 1: .idle (Slow breathing ambient glow) */
+        .sony-ai-dock.idle .liquid-glow-layer {
+            opacity: 0.35;
+            filter: blur(22px);
+            animation: idleBreathe 5s ease-in-out infinite;
+        }
+
+        @keyframes idleBreathe {
+
+            0%,
+            100% {
+                transform: scale(0.97);
+                opacity: 0.3;
+            }
+
+            50% {
+                transform: scale(1.03);
+                opacity: 0.45;
+            }
+        }
+
+        .sony-ai-dock.idle .state-pill {
+            background: rgba(148, 163, 184, 0.12);
+            color: #94A3B8;
+            border-color: rgba(148, 163, 184, 0.25);
+        }
+
+        /* STATE 2: .listening (Active fast pulsing waves / ripples) */
+        .sony-ai-dock.listening .liquid-glow-layer {
+            opacity: 0.85;
+            filter: blur(30px);
+            animation: listeningPulse 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes listeningPulse {
+            0% {
+                transform: scale(0.96);
+                opacity: 0.65;
+            }
+
+            50% {
+                transform: scale(1.08);
+                opacity: 0.95;
+            }
+
+            100% {
+                transform: scale(0.96);
+                opacity: 0.65;
+            }
+        }
+
+        .sony-ai-dock.listening .widget-card {
+            border-color: var(--electric-blue);
+            box-shadow:
+                0 24px 55px rgba(0, 0, 0, 0.7),
+                0 0 35px rgba(0, 198, 255, 0.35);
+        }
+
+        .sony-ai-dock.listening .state-pill {
+            background: rgba(0, 198, 255, 0.18);
+            color: #00C6FF;
+            border-color: rgba(0, 198, 255, 0.5);
+        }
+
+        /* STATE 3: .processing (Rapid high-velocity fluid color shifting) */
+        .sony-ai-dock.processing .liquid-glow-layer {
+            opacity: 0.95;
+            filter: blur(28px);
+            animation: processingWhirl 1.6s linear infinite;
+        }
+
+        @keyframes processingWhirl {
+            0% {
+                background-position: 0% 50%;
+                transform: rotate(0deg) scale(1.02);
+            }
+
+            50% {
+                background-position: 100% 50%;
+                transform: rotate(180deg) scale(1.06);
+            }
+
+            100% {
+                background-position: 0% 50%;
+                transform: rotate(360deg) scale(1.02);
+            }
+        }
+
+        .sony-ai-dock.processing .widget-card {
+            border-color: var(--neon-pink);
+            box-shadow:
+                0 24px 55px rgba(0, 0, 0, 0.75),
+                0 0 45px rgba(255, 0, 127, 0.4);
+        }
+
+        .sony-ai-dock.processing .state-pill {
+            background: rgba(255, 0, 127, 0.18);
+            color: #FF007F;
+            border-color: rgba(255, 0, 127, 0.5);
+        }
+
+        /* STATE 4: .playing (Smooth rhythmic beat pulse simulating dancing) */
+        .sony-ai-dock.playing .liquid-glow-layer {
+            opacity: 0.8;
+            filter: blur(26px);
+            animation: beatDance 0.75s ease-in-out infinite alternate;
+        }
+
+        @keyframes beatDance {
+            0% {
+                transform: scale(0.98) translateY(2px);
+                opacity: 0.65;
+            }
+
+            30% {
+                transform: scale(1.06) translateY(-4px);
+                opacity: 0.9;
+            }
+
+            100% {
+                transform: scale(1.01) translateY(0);
+                opacity: 0.75;
+            }
+        }
+
+        .sony-ai-dock.playing .widget-card {
+            border-color: #A855F7;
+            box-shadow:
+                0 24px 55px rgba(0, 0, 0, 0.7),
+                0 0 40px rgba(168, 85, 247, 0.35);
+        }
+
+        .sony-ai-dock.playing .state-pill {
+            background: rgba(168, 85, 247, 0.18);
+            color: #C084FC;
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+
+        /* ==========================================================================
+           5. WIDGET HEADER & STATE PILL
+           ========================================================================== */
+        .widget-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .ai-identity {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .ai-orb-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--electric-blue), var(--neon-pink));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0, 198, 255, 0.3);
+        }
+
+        .ai-orb-icon::after {
+            content: '';
+            position: absolute;
+            inset: 2px;
+            border-radius: 50%;
+            background: rgba(13, 15, 28, 0.6);
+            backdrop-filter: blur(4px);
+        }
+
+        .ai-orb-icon svg {
+            position: relative;
+            z-index: 2;
+            color: #FFF;
+        }
+
+        .ai-title-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ai-name {
+            font-family: var(--font-display);
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: #FFF;
+        }
+
+        .ai-subtitle {
+            font-size: 0.72rem;
+            color: #94A3B8;
+        }
+
+        /* State Indicator Pill */
+        .state-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 11px;
+            border-radius: 999px;
+            border: 1px solid;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            transition: all 0.3s var(--ease-fluid);
+        }
+
+        .state-pill .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* ==========================================================================
+           6. LIVE WAVEFORM & CONVERSATION DISPLAY AREA
+           ========================================================================== */
+        .widget-body {
+            position: relative;
+            min-height: 110px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.28);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 18px;
+            padding: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        /* Wake word ambient prompt */
+        .wake-word-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            font-size: 0.76rem;
+            color: #A5B4FC;
+        }
+
+        .wake-word-banner code {
+            font-family: var(--font-mono);
+            background: rgba(0, 198, 255, 0.15);
+            color: #00C6FF;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        /* Voice wave visualizer bars inside chat body */
+        .visualizer-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            height: 38px;
+            margin: 6px 0;
+        }
+
+        .bar {
+            width: 4px;
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, var(--electric-blue), var(--neon-pink));
+            transition: height 0.15s ease;
+        }
+
+        /* Animation intensities based on state */
+        .sony-ai-dock.idle .bar {
+            height: 6px !important;
+            opacity: 0.35;
+        }
+
+        .sony-ai-dock.listening .bar {
+            animation: barPulseListen 0.45s ease-in-out infinite alternate;
+        }
+
+        .sony-ai-dock.processing .bar {
+            animation: barPulseProcess 0.3s ease-in-out infinite alternate;
+        }
+
+        .sony-ai-dock.playing .bar {
+            animation: barPulsePlay 0.25s ease-in-out infinite alternate;
+        }
+
+        @keyframes barPulseListen {
+            0% {
+                height: 8px;
+                opacity: 0.7;
+            }
+
+            100% {
+                height: 34px;
+                opacity: 1;
+            }
+        }
+
+        @keyframes barPulseProcess {
+            0% {
+                height: 12px;
+                background: var(--neon-pink);
+            }
+
+            100% {
+                height: 30px;
+                background: var(--electric-blue);
+            }
+        }
+
+        @keyframes barPulsePlay {
+            0% {
+                height: 10px;
+            }
+
+            50% {
+                height: 36px;
+            }
+
+            100% {
+                height: 18px;
+            }
+        }
+
+        /* Stagger bar delays */
+        .bar:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .bar:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .bar:nth-child(3) {
+            animation-delay: 0.25s;
+        }
+
+        .bar:nth-child(4) {
+            animation-delay: 0.10s;
+        }
+
+        .bar:nth-child(5) {
+            animation-delay: 0.30s;
+        }
+
+        .bar:nth-child(6) {
+            animation-delay: 0.20s;
+        }
+
+        .bar:nth-child(7) {
+            animation-delay: 0.35s;
+        }
+
+        .bar:nth-child(8) {
+            animation-delay: 0.12s;
+        }
+
+        .bar:nth-child(9) {
+            animation-delay: 0.28s;
+        }
+
+        .bar:nth-child(10) {
+            animation-delay: 0.08s;
+        }
+
+        /* Dialog & Status Text Area */
+        .dialog-box {
+            text-align: center;
+            min-height: 42px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .transcript-text {
+            font-size: 0.92rem;
+            font-weight: 500;
+            color: #FFF;
+            line-height: 1.4;
+            margin-bottom: 3px;
+        }
+
+        .sub-transcript {
+            font-size: 0.75rem;
+            color: #94A3B8;
+        }
+
+        /* ==========================================================================
+           7. NOW PLAYING CARD & AUDIO PLAYER OVERLAY (RENDERED WHEN .playing)
+           ========================================================================== */
+        .now-playing-card {
+            display: none;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 14px;
+            margin-top: 10px;
+            animation: slideUpFade 0.35s var(--ease-fluid);
+        }
+
+        .sony-ai-dock.playing .now-playing-card {
+            display: block;
+        }
+
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .player-row {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+        }
+
+        /* Spinning Vinyl / Album Icon */
+        .album-art-disc {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, #1E293B 25%, #0F172A 70%, #00C6FF 100%);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .sony-ai-dock.playing .album-art-disc {
+            animation: spinVinyl 5s linear infinite;
+        }
+
+        @keyframes spinVinyl {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .vinyl-center {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--neon-pink);
+            border: 2px solid #FFF;
+        }
+
+        .track-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .now-playing-badge {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #38BDF8;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .track-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #FFF;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .track-artist {
+            font-size: 0.76rem;
+            color: #94A3B8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stop-btn {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #F87171;
+            width: 36px;
+            height: 36px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .stop-btn:hover {
+            background: #EF4444;
+            color: #FFF;
+            transform: scale(1.08);
+            box-shadow: 0 0 16px rgba(239, 68, 68, 0.5);
+        }
+
+        /* ==========================================================================
+           8. WIDGET CONTROLS (MIC BUTTON & TEXT INPUT FORM)
+           ========================================================================== */
+        .controls-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Reactive Microphone Button */
+        .mic-btn {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.06);
+            color: #FFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-fluid);
+            flex-shrink: 0;
+            overflow: visible;
+        }
+
+        .mic-btn:hover {
+            background: rgba(0, 198, 255, 0.18);
+            border-color: var(--electric-blue);
+            transform: scale(1.05);
+        }
+
+        /* Ring ripple effect when listening */
+        .mic-ripple {
+            position: absolute;
+            inset: -4px;
+            border-radius: 16px;
+            border: 2px solid var(--electric-blue);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .sony-ai-dock.listening .mic-ripple {
+            opacity: 1;
+            animation: micRipplePulse 1.2s infinite ease-out;
+        }
+
+        @keyframes micRipplePulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.4);
+                opacity: 0;
+            }
+        }
+
+        /* Active Mic State Colors */
+        .sony-ai-dock.listening .mic-btn {
+            background: var(--electric-blue);
+            color: #000;
+            border-color: #FFF;
+            box-shadow: 0 0 20px var(--electric-blue);
+        }
+
+        .sony-ai-dock.processing .mic-btn {
+            background: var(--neon-pink);
+            color: #FFF;
+            border-color: #FFF;
+            box-shadow: 0 0 20px var(--neon-pink);
+        }
+
+        /* Text Input Bar */
+        .chat-input-form {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            padding: 0 6px 0 14px;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+
+        .chat-input-form:focus-within {
+            border-color: var(--electric-blue);
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.25);
+        }
+
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #FFF;
+            font-size: 0.86rem;
+            font-family: var(--font-body);
+            padding: 12px 0;
+        }
+
+        .chat-input::placeholder {
+            color: #64748B;
+        }
+
+        .send-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: #FFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .send-btn:hover {
+            background: var(--electric-blue);
+            color: #000;
+        }
+
+        /* Bottom Status & Permission Bar */
+        .widget-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 13px;
+            font-size: 0.72rem;
+            color: #64748B;
+        }
+
+        .mic-permission-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .perm-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10B981;
+        }
+
+        .simulate-voice-link {
+            color: #93C5FD;
+            text-decoration: underline;
+            cursor: pointer;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .simulate-voice-link:hover {
+            color: #FFF;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .sony-ai-dock {
+                right: 14px;
+                bottom: 14px;
+                width: calc(100vw - 28px);
+            }
+
+            .desktop-environment {
+                padding: 24px;
+            }
+
+            .showcase-title {
+                font-size: 2.4rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ==========================================================================
+         STUDIO DESKTOP BACKDROP (Provides realistic workspace context for floating dock)
+         ========================================================================== -->
+    <div class="desktop-environment">
+        <div class="ambient-grid"></div>
+
+        <header class="studio-navbar">
+            <div class="brand-logo">
+                <span class="sony-badge">SONY AI</span>
+                <span class="sony-subtext">Acoustic Intelligence OS • Core v3.4</span>
+            </div>
+            <div class="tag-pill">
+                <span class="pulse-dot"></span>
+                Voice Wake-Word Active: "Hey Sony"
+            </div>
+        </header>
+
+        <main class="showcase-content">
+            <div class="tag-pill"
+                style="background: rgba(127, 0, 255, 0.15); border-color: rgba(127, 0, 255, 0.35); color: #D8B4FE;">
+                ✨ Corner-Docked Voice Assistant Prototype
+            </div>
+            <h1 class="showcase-title">
+                Speak your vibe.<br>
+                <span>Sony AI scores the moment.</span>
+            </h1>
+            <p class="showcase-desc">
+                Always present in your bottom-right corner. Say <strong>"Hey Sony"</strong> followed by a movie title,
+                emotional mood, or song request. Experience real-time semantic routing with fluid glassmorphism state
+                animations.
+            </p>
+
+            <div class="voice-guide-panel">
+                <div class="guide-label">
+                    <span>Quick Voice Command Simulator (Click any chip to test instantly)</span>
+                    <span style="color: #38BDF8;">✦ Semantic Engine Ready</span>
+                </div>
+                <div class="quick-prompts-grid">
+                    <button class="prompt-chip"
+                        onclick="simulateVoiceCommand('Hey Sony, play a song for the movie Interstellar')">
+                        <span>🎬 "Hey Sony, play Interstellar"</span>
+                        <span class="chip-icon">▶</span>
+                    </button>
+                    <button class="prompt-chip"
+                        onclick="simulateVoiceCommand('Hey Sony, play something energetic for my workout')">
+                        <span>⚡ "Hey Sony, play energetic"</span>
+                        <span class="chip-icon">▶</span>
+                    </button>
+                    <button class="prompt-chip"
+                        onclick="simulateVoiceCommand('Hey Sony, I feel sad and need chill cello music')">
+                        <span>🌧️ "Hey Sony, play sad cello"</span>
+                        <span class="chip-icon">▶</span>
+                    </button>
+                    <button class="prompt-chip"
+                        onclick="simulateVoiceCommand('Hey Sony, play the Gladiator theme song')">
+                        <span>🛡️ "Hey Sony, play Gladiator"</span>
+                        <span class="chip-icon">▶</span>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <footer style="position: relative; z-index: 10; font-size: 0.78rem; color: #475569;">
+            Prototype Single-File Build • Features Web Speech API Continuous Listening & Web Audio Synthesis
+        </footer>
+    </div>
+
+
+    <!-- ==========================================================================
+         CORNER-DOCKED AI MUSIC CHATBOT WIDGET
+         Visual States toggled via classes: .idle | .listening | .processing | .playing
+         ========================================================================== -->
+    <aside id="sonyAiDock" class="sony-ai-dock idle" aria-label="Sony AI Music Chatbot">
+
+        <!-- Animated Liquid Glow Wave Aura around the Widget -->
+        <div class="glow-aura-wrapper">
+            <div class="liquid-glow-layer"></div>
+
+            <div class="widget-card">
+
+                <!-- Top Identity & Dynamic State Badge -->
+                <div class="widget-header">
+                    <div class="ai-identity">
+                        <div class="ai-orb-icon">
+                            <span style="font-size: 18px; line-height: 1;">🤖</span>
+                        </div>
+                        <div class="ai-title-group">
+                            <span class="ai-name">Sony AI Music</span>
+                            <span class="ai-subtitle">Semantic Audio Router</span>
+                        </div>
+                    </div>
+
+                    <!-- State Pill (.idle | .listening | .processing | .playing) -->
+                    <div id="statePill" class="state-pill">
+                        <span class="status-dot"></span>
+                        <span id="stateLabel">IDLE</span>
+                    </div>
+                </div>
+
+                <!-- Main Dialog & Visualizer Body -->
+                <div class="widget-body">
+
+                    <div class="wake-word-banner">
+                        <span>Wake word listener</span>
+                        <code>Hey Sony</code>
+                    </div>
+
+                    <!-- 10-Bar Equalizer / Waveform Visualizer -->
+                    <div class="visualizer-container">
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                    </div>
+
+                    <!-- Status / Transcript Dialogue -->
+                    <div class="dialog-box">
+                        <div id="transcriptText" class="transcript-text">
+                            Listening for "Hey Sony"...
+                        </div>
+                        <div id="subTranscript" class="sub-transcript">
+                            Ambient voice recognition active
+                        </div>
+                    </div>
+
+                    <!-- Now Playing Audio Card (Appears in .playing state) -->
+                    <div id="nowPlayingCard" class="now-playing-card">
+                        <div class="player-row">
+                            <div class="album-art-disc">
+                                <div class="vinyl-center"></div>
+                            </div>
+                            <div class="track-info">
+                                <div class="now-playing-badge">● LIVE SYNTHESIS AUDIO</div>
+                                <div id="trackTitleDisplay" class="track-title">Cornfield Chase</div>
+                                <div id="trackArtistDisplay" class="track-artist">Hans Zimmer • Interstellar</div>
+                            </div>
+                            <!-- Stop Track Button -->
+                            <button id="stopTrackBtn" class="stop-btn" title="Stop Playback" aria-label="Stop Playback">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <rect x="5" y="5" width="14" height="14" rx="3" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Controls: Microphone Toggle & Manual Text Input -->
+                <div class="controls-row">
+                    <!-- Mic Button -->
+                    <button id="micBtn" class="mic-btn" title="Toggle Voice Wake-Word Listener"
+                        aria-label="Toggle Microphone">
+                        <div class="mic-ripple"></div>
+                        <svg id="micIconSvg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                            <line x1="12" y1="19" x2="12" y2="22" />
+                        </svg>
+                    </button>
+
+                    <!-- Text Chat Input -->
+                    <form id="chatForm" class="chat-input-form" onsubmit="handleManualSubmit(event)">
+                        <input id="chatInput" type="text" class="chat-input"
+                            placeholder="Type 'Hey Sony, play Interstellar'..." autocomplete="off">
+                        <button type="submit" class="send-btn" title="Send Request">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.2">
+                                <line x1="22" y1="2" x2="11" y2="13" />
+                                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Footer Status & Voice Simulator Trigger -->
+                <div class="widget-footer">
+                    <div class="mic-permission-status">
+                        <span id="permDot" class="perm-dot"></span>
+                        <span id="permText">Speech Engine Ready</span>
+                    </div>
+                    <span class="simulate-voice-link"
+                        onclick="simulateVoiceCommand('Hey Sony, play the movie Interstellar theme')">
+                        Test Voice Demo
+                    </span>
+                </div>
+
+            </div>
+        </div>
+    </aside>
+
+
+    <!-- ==========================================================================
+         CLIENT-SIDE JAVASCRIPT LOGIC
+         1. UI State Controller (.idle -> .listening -> .processing -> .playing)
+         2. Web Speech API continuous wake-word listener ("Hey Sony") + Auto-restart
+         3. Semantic AI & Music Handler processMusicQuery(query)
+         4. Web Audio API procedural synthesizer for instant playable music
+         ========================================================================== -->
+    <script>
+        /**
+         * =====================================================================
+         * APPLICATION CORE STATE & DOM ELEMENTS
+         * =====================================================================
+         */
+        const dockElement = document.getElementById('sonyAiDock');
+        const stateLabel = document.getElementById('stateLabel');
+        const transcriptText = document.getElementById('transcriptText');
+        const subTranscript = document.getElementById('subTranscript');
+        const permDot = document.getElementById('permDot');
+        const permText = document.getElementById('permText');
+        const trackTitleDisplay = document.getElementById('trackTitleDisplay');
+        const trackArtistDisplay = document.getElementById('trackArtistDisplay');
+        const stopTrackBtn = document.getElementById('stopTrackBtn');
+        const micBtn = document.getElementById('micBtn');
+        const chatInput = document.getElementById('chatInput');
+
+        let currentState = 'idle'; // 'idle' | 'listening' | 'processing' | 'playing'
+        let recognition = null;
+        let isRecognitionActive = false;
+        let wakeWordTriggered = false;
+        let currentAudioSynth = null; // Holds active Web Audio API synth
+
+        /**
+         * SET UI STATE (.idle | .listening | .processing | .playing)
+         * Seamlessly switches visual gradient rings, equalizer bars, and pill badges
+         */
+        function setWidgetState(newState, message = '', subMessage = '') {
+            currentState = newState;
+            dockElement.className = `sony-ai-dock ${newState}`;
+            stateLabel.textContent = newState.toUpperCase();
+
+            if (message) transcriptText.textContent = message;
+            if (subMessage) subTranscript.textContent = subMessage;
+
+            // Log state transition in console
+            console.log(`[Sony AI State Transition] -> ${newState.toUpperCase()}`, { message, subMessage });
+        }
+
+
+        /**
+         * =====================================================================
+         * 2. VOICE ACTIVATION & ENGINE ("Hey Sony")
+         * WebKitSpeechRecognition configured for continuous listening
+         * =====================================================================
+         */
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (!SpeechRecognition) {
+                permDot.style.background = '#F59E0B';
+                permText.textContent = 'Speech API N/A (Use Text / Simulator)';
+                console.warn('[Speech Engine] Web Speech API not supported in this browser. Text input and voice simulator chips remain active.');
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                isRecognitionActive = true;
+                permDot.style.background = '#10B981';
+                permText.textContent = 'Mic Active • Listening for "Hey Sony"';
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const speechChunk = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += speechChunk;
+                    } else {
+                        interimTranscript += speechChunk;
+                    }
+                }
+
+                const fullPhrase = (finalTranscript || interimTranscript).trim();
+
+                // Check for wake word "Hey Sony" (plus common speech recognition phonetic variations)
+                const wakeRegex = /(?:hey|hi|ok|a)\s*(?:sony|sonny|soni|so need)/i;
+
+                if (wakeRegex.test(fullPhrase)) {
+                    wakeWordTriggered = true;
+                    setWidgetState('listening', 'Wake word detected!', 'Listening for your music request...');
+
+                    // Extract what follows "Hey Sony"
+                    const parts = fullPhrase.split(wakeRegex);
+                    const commandAfterWake = parts[parts.length - 1].trim();
+
+                    // If user spoke the full command together (e.g. "Hey Sony play Interstellar")
+                    if (finalTranscript && commandAfterWake.length > 2) {
+                        handleVoiceCommand(commandAfterWake);
+                    }
+                } else if (wakeWordTriggered && finalTranscript) {
+                    // If wake word was triggered earlier and user just finished speaking command
+                    handleVoiceCommand(finalTranscript);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.warn('[Speech Engine Error]', event.error);
+                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                    permDot.style.background = '#EF4444';
+                    permText.textContent = 'Mic Permission Denied';
+                }
+            };
+
+            // Auto-restart logic so engine doesn't permanently die on silence or network timeout
+            recognition.onend = () => {
+                isRecognitionActive = false;
+                if (currentState !== 'processing' && currentState !== 'playing') {
+                    setTimeout(() => {
+                        try {
+                            if (recognition && !isRecognitionActive) {
+                                recognition.start();
+                            }
+                        } catch (e) {
+                            // Suppress restart error if already started
+                        }
+                    }, 800);
+                }
+            };
+
+            // Attempt initial start
+            try {
+                recognition.start();
+            } catch (e) {
+                console.info('[Speech Engine] User gesture needed to start mic or already listening.');
+            }
+        }
+
+
+        /**
+         * HANDLE RECEIVED COMMAND AFTER WAKE WORD
+         */
+        function handleVoiceCommand(rawCommand) {
+            wakeWordTriggered = false;
+            setWidgetState('listening', `"${rawCommand}"`, 'Processing with Sony Semantic Engine...');
+
+            // Forward to semantic AI logic
+            setTimeout(() => {
+                processMusicQuery(rawCommand);
+            }, 600);
+        }
+
+
+        /**
+         * SIMULATOR FUNCTION FOR TESTING IN ANY BROWSER (NO MIC REQUIRED)
+         */
+        function simulateVoiceCommand(simulatedPhrase) {
+            // Step 1: Simulate wake word detection
+            setWidgetState('listening', 'Wake Word: "Hey Sony"', 'Capturing audio phrase...');
+
+            setTimeout(() => {
+                // Remove "Hey Sony," prefix if present for clean display
+                const cleanCommand = simulatedPhrase.replace(/^hey sony,?\s*/i, '');
+                setWidgetState('listening', `"${cleanCommand}"`, 'Transcribing command...');
+
+                setTimeout(() => {
+                    processMusicQuery(simulatedPhrase);
+                }, 800);
+            }, 700);
+        }
+
+
+        /**
+         * MANUAL FORM SUBMISSION HANDLER
+         */
+        function handleManualSubmit(event) {
+            event.preventDefault();
+            const query = chatInput.value.trim();
+            if (!query) return;
+
+            chatInput.value = '';
+            setWidgetState('listening', `"${query}"`, 'Manual input received...');
+
+            setTimeout(() => {
+                processMusicQuery(query);
+            }, 400);
+        }
+
+
+        /**
+         * =====================================================================
+         * 3. SEMANTIC AI & MUSIC HANDLER LOGIC
+         * processMusicQuery(query): Simulates backend AI semantic routing
+         * Includes 1.5-second setTimeout to mimic API latency
+         * Returns structured object: { status: "success", action: "play", trackName: "Track Name - Artist" }
+         * =====================================================================
+         */
+        function processMusicQuery(query) {
+            // Step A: Immediately transition UI state to .processing
+            setWidgetState('processing', 'AI Semantic Routing...', 'Analyzing mood, cinematic themes & acoustics...');
+
+            const normalizedQuery = query.toLowerCase();
+
+            // Step B: 1.5-second setTimeout simulating AI backend latency & evaluation
+            setTimeout(() => {
+                let resolvedTrack = null;
+
+                // 1. Movie Semantic Resolution
+                const movieCatalog = [
+                    { keywords: ['interstellar', 'space', 'nolan', 'cornfield', 'cosmos'], title: 'Cornfield Chase / No Time for Caution', artist: 'Hans Zimmer • Interstellar', synthPreset: 'cinematic' },
+                    { keywords: ['inception', 'dream', 'totem'], title: 'Time', artist: 'Hans Zimmer • Inception', synthPreset: 'cinematic' },
+                    { keywords: ['gladiator', 'maximus', 'rome'], title: 'Now We Are Free', artist: 'Hans Zimmer & Lisa Gerrard', synthPreset: 'epic' },
+                    { keywords: ['tron', 'grid', 'legacy', 'daft punk'], title: 'The Grid / Derezzed', artist: 'Daft Punk • Tron Legacy', synthPreset: 'synthwave' },
+                    { keywords: ['blade runner', '2049', 'cyberpunk', 'vangelis'], title: 'Tears in Rain', artist: 'Vangelis • Blade Runner', synthPreset: 'synthwave' },
+                    { keywords: ['oppenheimer', 'can you hear the music', 'ludwig'], title: 'Can You Hear The Music', artist: 'Ludwig Göransson • Oppenheimer', synthPreset: 'cinematic' },
+                    { keywords: ['dune', 'arrakis', 'paul'], title: 'Paul\'s Dream', artist: 'Hans Zimmer • Dune Part II', synthPreset: 'epic' }
+                ];
+
+                for (const movie of movieCatalog) {
+                    if (movie.keywords.some(kw => normalizedQuery.includes(kw))) {
+                        resolvedTrack = movie;
+                        break;
+                    }
+                }
+
+                // 2. Mood Semantic Resolution (if no movie matched)
+                if (!resolvedTrack) {
+                    const moodCatalog = [
+                        { keywords: ['sad', 'melancholy', 'cry', 'heartbreak', 'lonely'], title: 'Midnight Solitude', artist: 'Ambient Cello & Piano Ensemble', synthPreset: 'chill' },
+                        { keywords: ['energetic', 'workout', 'gym', 'pump', 'hype', 'run'], title: 'Cybernetic Pulse', artist: 'Sony Synthwave Overdrive', synthPreset: 'synthwave' },
+                        { keywords: ['focus', 'study', 'code', 'coding', 'work', 'concentration'], title: 'Deep Flow State', artist: 'Lo-Fi Chill & Vinyl Waves', synthPreset: 'chill' },
+                        { keywords: ['chill', 'relax', 'calm', 'peaceful', 'sleep', 'ambient'], title: 'Sunset Horizon', artist: 'Dreamy Vaporwave Soundscape', synthPreset: 'chill' },
+                        { keywords: ['party', 'dance', 'club', 'upbeat'], title: 'Neon Nights Groove', artist: 'Electro House Collective', synthPreset: 'synthwave' }
+                    ];
+
+                    for (const mood of moodCatalog) {
+                        if (mood.keywords.some(kw => normalizedQuery.includes(kw))) {
+                            resolvedTrack = mood;
+                            break;
+                        }
+                    }
+                }
+
+                // 3. Fallback / Direct Song Request Matcher
+                if (!resolvedTrack) {
+                    resolvedTrack = {
+                        title: 'Acoustic Horizon (AI Smart Recommendation)',
+                        artist: 'Sony Spatial Mastered Track',
+                        synthPreset: 'cinematic'
+                    };
+                }
+
+                // REQUIRED STRUCTURED OUTPUT
+                const responsePayload = {
+                    status: 'success',
+                    action: 'play',
+                    trackName: `${resolvedTrack.title} - ${resolvedTrack.artist}`,
+                    meta: resolvedTrack
+                };
+
+                console.log('[processMusicQuery Response Output]:', responsePayload);
+
+                // Transition to Playback State
+                startPlaybackLoop(responsePayload);
+
+            }, 1500);
+        }
+
+
+        /**
+         * =====================================================================
+         * 4. PLAYBACK INTEGRATION & STATE LOOP (.playing)
+         * Transitions UI to .playing, displays "Now Playing: [Track Name]",
+         * and starts procedural ambient Web Audio synthesizer so real music plays!
+         * =====================================================================
+         */
+        function startPlaybackLoop(payload) {
+            const trackObj = payload.meta;
+
+            // Update UI card display
+            trackTitleDisplay.textContent = trackObj.title;
+            trackArtistDisplay.textContent = trackObj.artist;
+
+            // Transition UI State to .playing
+            setWidgetState(
+                'playing',
+                `Now Playing: ${trackObj.title}`,
+                trackObj.artist
+            );
+
+            // Start Procedural Audio Engine
+            playProceduralAudio(trackObj.synthPreset);
+        }
+
+
+        /**
+         * PROCEDURAL AMBIENT MUSIC SYNTHESIZER (Web Audio API)
+         * Generates rich cinematic Hans Zimmer chords / synthwave arpeggios
+         * Proves full end-to-end audio playback without broken external URLs
+         */
+        function playProceduralAudio(preset = 'cinematic') {
+            stopAudioPlayback(); // Stop any previous playback
+
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                const ctx = new AudioCtx();
+
+                const masterGain = ctx.createGain();
+                masterGain.gain.setValueAtTime(0.08, ctx.currentTime); // Comfortable ambient volume
+                masterGain.connect(ctx.destination);
+
+                const intervals = [];
+
+                if (preset === 'cinematic') {
+                    // Hans Zimmer-style atmospheric chord drone + gentle fifth pulse
+                    const chordFrequencies = [130.81, 196.00, 261.63, 329.63]; // C minor / cinematic harmony
+                    chordFrequencies.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+                        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+                        gain.gain.setValueAtTime(0.03, ctx.currentTime);
+                        osc.connect(gain);
+                        gain.connect(masterGain);
+                        osc.start();
+                    });
+                } else if (preset === 'synthwave') {
+                    // Cyberpunk / Workout Synthwave Arpeggiator
+                    const notes = [220, 261.63, 329.63, 392.00, 440];
+                    let step = 0;
+
+                    const intervalId = setInterval(() => {
+                        if (currentState !== 'playing') return;
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(notes[step % notes.length], ctx.currentTime);
+
+                        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+
+                        osc.connect(gain);
+                        gain.connect(masterGain);
+                        osc.start();
+                        osc.stop(ctx.currentTime + 0.4);
+
+                        step++;
+                    }, 280);
+
+                    intervals.push(intervalId);
+                } else {
+                    // Chill / Lo-fi warm pad
+                    const osc = ctx.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(174.61, ctx.currentTime); // Warm F chord frequency
+                    osc.connect(masterGain);
+                    osc.start();
+                }
+
+                currentAudioSynth = {
+                    ctx,
+                    intervals,
+                    stop: () => {
+                        intervals.forEach(clearInterval);
+                        try {
+                            ctx.close();
+                        } catch (e) { }
+                    }
+                };
+            } catch (e) {
+                console.warn('[Web Audio API] User gesture required for playback synthesis:', e);
+            }
+        }
+
+
+        /**
+         * STOP PLAYBACK & RETURN TO .idle STATE
+         */
+        function stopAudioPlayback() {
+            if (currentAudioSynth) {
+                currentAudioSynth.stop();
+                currentAudioSynth = null;
+            }
+        }
+
+        stopTrackBtn.addEventListener('click', () => {
+            stopAudioPlayback();
+            setWidgetState('idle', 'Playback Stopped', 'Listening for "Hey Sony"...');
+        });
+
+
+        /**
+         * MICROPHONE BUTTON MANUAL TOGGLE
+         */
+        micBtn.addEventListener('click', () => {
+            if (currentState === 'idle') {
+                simulateVoiceCommand('Hey Sony, play the movie Interstellar theme');
+            } else if (currentState === 'playing') {
+                stopAudioPlayback();
+                setWidgetState('idle', 'Ready for voice request', 'Say "Hey Sony"');
+            } else {
+                setWidgetState('idle', 'Listening for "Hey Sony"...', 'Ambient voice recognition active');
+            }
+        });
+
+
+        /**
+         * INITIALIZE ENGINE ON LOAD
+         */
+        window.addEventListener('DOMContentLoaded', () => {
+            initSpeechRecognition();
+        });
+    </script>
+</body>
+
+</html>

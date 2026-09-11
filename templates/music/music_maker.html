@@ -1,0 +1,473 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Song Studio - Nexonic{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/music_maker.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="studio-container">
+    <!-- Studio Header -->
+    <div class="studio-header">
+        <div>
+            <h1 class="hero-title" style="font-size: 32px; margin-bottom: 4px;">Song Studio</h1>
+            <div class="studio-subtitle">Build beats, compose melodies with synthesizer ADSR, and export WAV tracks.</div>
+        </div>
+        <div class="studio-actions">
+            <!-- Project management info -->
+            <input type="hidden" id="current-song-id" value="{% if preloaded_song %}{{ preloaded_song.id }}{% endif %}">
+            <div class="project-info-badge">
+                <i class="fas fa-file-audio"></i>
+                <span id="project-title-display">{% if preloaded_song %}{{ preloaded_song.title }}{% else %}New Composition{% endif %}</span>
+            </div>
+            <button class="btn-primary" id="btn-save-project">
+                <i class="fas fa-save"></i> Save Song
+            </button>
+        </div>
+    </div>
+
+    <!-- Hidden Preloaded Data -->
+    {% if preloaded_song %}
+        <input type="hidden" id="preloaded-sequence-data" value="{{ preloaded_song.sequence_data }}">
+        <input type="hidden" id="preloaded-bpm" value="{{ preloaded_song.bpm }}">
+    {% endif %}
+
+    <!-- Top Control Bar -->
+    <div class="studio-panel control-bar">
+        <div class="control-group">
+            <button class="btn-studio-play" id="btn-studio-play" title="Play / Pause Sequence">
+                <i class="fas fa-play"></i>
+            </button>
+            <button class="btn-studio-control" id="btn-studio-stop" title="Stop & Reset">
+                <i class="fas fa-stop"></i>
+            </button>
+        </div>
+
+        <div class="control-divider"></div>
+
+        <div class="control-group">
+            <span class="control-label"><i class="fas fa-tachometer-alt"></i> Tempo</span>
+            <input type="range" id="bpm-slider" min="60" max="200" value="{% if preloaded_song %}{{ preloaded_song.bpm }}{% else %}120{% endif %}" class="studio-slider">
+            <input type="number" id="bpm-number" min="60" max="200" value="{% if preloaded_song %}{{ preloaded_song.bpm }}{% else %}120{% endif %}" class="bpm-input">
+            <span class="control-unit">BPM</span>
+        </div>
+
+        <div class="control-divider"></div>
+
+        <div class="control-group">
+            <span class="control-label"><i class="fas fa-volume-up"></i> Master</span>
+            <input type="range" id="master-volume" min="0" max="100" value="70" class="studio-slider">
+            <span id="volume-display" class="control-value">70%</span>
+        </div>
+
+        <div class="control-divider"></div>
+
+        <div class="control-group" style="margin-left: auto; gap: 8px;">
+            <button class="btn-outline" id="btn-clear-grid" title="Clear Sequencer Grid">
+                <i class="fas fa-eraser"></i> Clear
+            </button>
+            <button class="btn-outline" id="btn-randomize" title="Generate Random Beat">
+                <i class="fas fa-dice"></i> Random
+            </button>
+            <button class="btn-outline" id="btn-export-wav" title="Render to WAV Audio File">
+                <i class="fas fa-file-download"></i> Export WAV
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Workspace Layout -->
+    <div class="studio-layout">
+        <!-- Sequencer Grid (Left Side) -->
+        <div class="sequencer-column">
+            <!-- Sequencer Section -->
+            <div class="studio-panel sequencer-wrapper">
+                <div class="sequencer-legend">
+                    <span style="font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);">Instrument Channels</span>
+                    <div class="step-ruler">
+                        {% for i in "1234567890123456" %}
+                            <div class="ruler-step {% if forloop.counter0|divisibleby:4 %}beat-accent{% endif %}">{{ forloop.counter }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="grid-rows-container">
+                    <!-- Custom Audio Section -->
+                    <div class="grid-section-header">Vocal & Custom Audio Track</div>
+                    
+                    <div class="custom-audio-track-row">
+                        <div class="custom-track-label">
+                            <span class="channel-name" style="font-weight:700;"><i class="fas fa-microphone" style="color:#1db954; margin-right:4px;"></i> Vocal Track</span>
+                            <div class="custom-track-actions" style="margin-top:6px; display:flex; gap:6px;">
+                                <button id="btn-mute-custom" style="font-size:10px; padding:4px 8px; border-radius:3px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.02); color:#aaa; cursor:pointer; display:flex; align-items:center; gap:4px;"><i class="fas fa-volume-up"></i> Mute</button>
+                                <button id="btn-clear-custom" style="font-size:10px; padding:4px 8px; border-radius:3px; border:1px solid rgba(255,92,92,0.2); background:rgba(255,92,92,0.02); color:#ff5c5c; cursor:pointer; display:flex; align-items:center; gap:4px;"><i class="fas fa-trash-alt"></i> Clear</button>
+                            </div>
+                        </div>
+                        <div class="custom-track-workspace">
+                            <!-- Drag & Drop Zone -->
+                            <div class="custom-upload-zone" id="custom-upload-zone">
+                                <div id="custom-upload-prompt">
+                                    <i class="fas fa-cloud-upload-alt" style="font-size:16px; margin-right:6px; color:#1db954;"></i> Drag & Drop Audio or Click to Upload
+                                </div>
+                                <canvas id="custom-waveform-canvas" style="display:block; width:100%; height:42px; border-radius:4px;"></canvas>
+                                <input type="file" id="custom-file-input" accept="audio/*" style="display:none;">
+                            </div>
+                            
+                            <!-- Trigger & Recording Controls -->
+                            <div class="custom-track-controls">
+                                <div class="trigger-step-wrapper" style="display:flex; flex-direction:column; justify-content:center;">
+                                    <span style="font-size:9px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Trigger Beat</span>
+                                    <select id="custom-trigger-step" class="bpm-input" style="width:85px; margin-top:4px; background:#282828; border:1px solid #3e3e3e; border-radius:4px; color:#fff; font-size:11px; padding:3px;">
+                                        <option value="0">Step 1</option>
+                                        <option value="1">Step 2</option>
+                                        <option value="2">Step 3</option>
+                                        <option value="3">Step 4</option>
+                                        <option value="4">Step 5</option>
+                                        <option value="5">Step 6</option>
+                                        <option value="6">Step 7</option>
+                                        <option value="7">Step 8</option>
+                                        <option value="8">Step 9</option>
+                                        <option value="9">Step 10</option>
+                                        <option value="10">Step 11</option>
+                                        <option value="11">Step 12</option>
+                                        <option value="12">Step 13</option>
+                                        <option value="13">Step 14</option>
+                                        <option value="14">Step 15</option>
+                                        <option value="15">Step 16</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="recording-wrapper" style="display:flex; align-items:center; gap:10px;">
+                                    <button class="btn-outline" id="btn-record-audio" style="font-size:11px; padding:6px 12px; border-radius:4px; display:flex; align-items:center; gap:6px; cursor:pointer; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:#fff;">
+                                        <i class="fas fa-microphone" style="color:#ff5c5c;"></i> Record
+                                    </button>
+                                    <span class="recording-indicator" id="recording-indicator" style="display:none; font-size:10px; color:#ff5c5c; font-weight:700; align-items:center; gap:6px;">
+                                        <span class="rec-dot"></span> REC
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Drum Tracks -->
+                    <div class="grid-section-header">Drums & Rhythm</div>
+
+                    
+                    <!-- Kick Row -->
+                    <div class="sequencer-row" data-channel="kick">
+                        <div class="channel-label">
+                            <span class="channel-name">Kick Drum</span>
+                            <div class="channel-controls">
+                                <button class="btn-channel-mute" title="Mute"><i class="fas fa-volume-mute"></i></button>
+                                <button class="btn-channel-solo" title="Solo">S</button>
+                            </div>
+                        </div>
+                        <div class="step-cells">
+                            {% for i in "1234567890123456" %}
+                                <div class="step-cell {% if forloop.counter0|divisibleby:4 %}beat-border{% endif %}" data-step="{{ forloop.counter0 }}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Snare Row -->
+                    <div class="sequencer-row" data-channel="snare">
+                        <div class="channel-label">
+                            <span class="channel-name">Snare Drum</span>
+                            <div class="channel-controls">
+                                <button class="btn-channel-mute" title="Mute"><i class="fas fa-volume-mute"></i></button>
+                                <button class="btn-channel-solo" title="Solo">S</button>
+                            </div>
+                        </div>
+                        <div class="step-cells">
+                            {% for i in "1234567890123456" %}
+                                <div class="step-cell {% if forloop.counter0|divisibleby:4 %}beat-border{% endif %}" data-step="{{ forloop.counter0 }}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Hi-Hat Row -->
+                    <div class="sequencer-row" data-channel="hihat">
+                        <div class="channel-label">
+                            <span class="channel-name">Hi-Hat</span>
+                            <div class="channel-controls">
+                                <button class="btn-channel-mute" title="Mute"><i class="fas fa-volume-mute"></i></button>
+                                <button class="btn-channel-solo" title="Solo">S</button>
+                            </div>
+                        </div>
+                        <div class="step-cells">
+                            {% for i in "1234567890123456" %}
+                                <div class="step-cell {% if forloop.counter0|divisibleby:4 %}beat-border{% endif %}" data-step="{{ forloop.counter0 }}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Clap Row -->
+                    <div class="sequencer-row" data-channel="clap">
+                        <div class="channel-label">
+                            <span class="channel-name">Handclap</span>
+                            <div class="channel-controls">
+                                <button class="btn-channel-mute" title="Mute"><i class="fas fa-volume-mute"></i></button>
+                                <button class="btn-channel-solo" title="Solo">S</button>
+                            </div>
+                        </div>
+                        <div class="step-cells">
+                            {% for i in "1234567890123456" %}
+                                <div class="step-cell {% if forloop.counter0|divisibleby:4 %}beat-border{% endif %}" data-step="{{ forloop.counter0 }}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Synth Roll Section -->
+                    <div class="grid-section-header" style="margin-top: 16px;">Synthesizer Melody (C Major Scale)</div>
+                    
+                    <div class="sequencer-row synth-row" data-channel="synth" data-note="C5">
+                        <div class="channel-label synth-label"><span class="channel-name">C5</span></div>
+                        <div class="step-cells">
+                            {% for i in "1234567890123456" %}
+                                <div class="step-cell {% if forloop.counter0|divisibleby:4 %}beat-border{% endif %}" data-step="{{ forloop.counter0 }}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="sequencer-row synth-row" data-channel="synth" data-note="B4">
+                        <div class="channel-label synth-label"><span class="channel-name">B4</span></div>
+                        <div class="step-cells">
+                            {% for i in "1234567890123456" %}
+                                <div class="step-cell {% if forloop.counter0|divisibleby:4 %}beat-border{% endif %}" data-step="{{ forloop.counter0 }}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="sequencer-row synth-row" data-channel="synth" data-note="A4">
+                        <div class="channel-label synth-label"><span class="channel-name">A4</span></div>
+                        <div class="step-cells">
+                            {% for i in "1234567890123456" %}
+                                <div class="step-cell {% if forloop.counter0|divisibleby:4 %}beat-border{% endif %}" data-step="{{ forloop.counter0 }}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="sequencer-row synth-row" data-channel="synth" data-note="G4">
+                        <div class="channel-label synth-label"><span class="channel-name">G4</span></div>
+                        <div class="step-cells">
+                            {% for i in "1234567890123456" %}
+                                <div class="step-cell {% if forloop.counter0|divisibleby:4 %}beat-border{% endif %}" data-step="{{ forloop.counter0 }}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="sequencer-row synth-row" data-channel="synth" data-note="F4">
+                        <div class="channel-label synth-label"><span class="channel-name">F4</span></div>
+                        <div class="step-cells">
+                            {% for i in "1234567890123456" %}
+                                <div class="step-cell {% if forloop.counter0|divisibleby:4 %}beat-border{% endif %}" data-step="{{ forloop.counter0 }}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="sequencer-row synth-row" data-channel="synth" data-note="E4">
+                        <div class="channel-label synth-label"><span class="channel-name">E4</span></div>
+                        <div class="step-cells">
+                            {% for i in "1234567890123456" %}
+                                <div class="step-cell {% if forloop.counter0|divisibleby:4 %}beat-border{% endif %}" data-step="{{ forloop.counter0 }}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="sequencer-row synth-row" data-channel="synth" data-note="D4">
+                        <div class="channel-label synth-label"><span class="channel-name">D4</span></div>
+                        <div class="step-cells">
+                            {% for i in "1234567890123456" %}
+                                <div class="step-cell {% if forloop.counter0|divisibleby:4 %}beat-border{% endif %}" data-step="{{ forloop.counter0 }}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="sequencer-row synth-row" data-channel="synth" data-note="C4">
+                        <div class="channel-label synth-label"><span class="channel-name">C4</span></div>
+                        <div class="step-cells">
+                            {% for i in "1234567890123456" %}
+                                <div class="step-cell {% if forloop.counter0|divisibleby:4 %}beat-border{% endif %}" data-step="{{ forloop.counter0 }}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playable Keyboard Panel -->
+            <div class="studio-panel keyboard-wrapper">
+                <div style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>Live Playable Keyboard (Use computer keys A, S, D, F, G, H, J, K...)</span>
+                    <span style="font-size:11px; opacity:0.7;"><i class="fas fa-keyboard"></i> Hotkeys Mapped</span>
+                </div>
+                <div class="piano-keyboard">
+                    <div class="piano-key white-key" data-note="C4" data-key="a"><span class="key-label">C4<br><small>A</small></span></div>
+                    <div class="piano-key black-key" data-note="C#4" data-key="w"><span class="key-label">C#4<br><small>W</small></span></div>
+                    <div class="piano-key white-key" data-note="D4" data-key="s"><span class="key-label">D4<br><small>S</small></span></div>
+                    <div class="piano-key black-key" data-note="D#4" data-key="e"><span class="key-label">D#4<br><small>E</small></span></div>
+                    <div class="piano-key white-key" data-note="E4" data-key="d"><span class="key-label">E4<br><small>D</small></span></div>
+                    <div class="piano-key white-key" data-note="F4" data-key="f"><span class="key-label">F4<br><small>F</small></span></div>
+                    <div class="piano-key black-key" data-note="F#4" data-key="t"><span class="key-label">F#4<br><small>T</small></span></div>
+                    <div class="piano-key white-key" data-note="G4" data-key="g"><span class="key-label">G4<br><small>G</small></span></div>
+                    <div class="piano-key black-key" data-note="G#4" data-key="y"><span class="key-label">G#4<br><small>Y</small></span></div>
+                    <div class="piano-key white-key" data-note="A4" data-key="h"><span class="key-label">A4<br><small>H</small></span></div>
+                    <div class="piano-key black-key" data-note="A#4" data-key="u"><span class="key-label">A#4<br><small>U</small></span></div>
+                    <div class="piano-key white-key" data-note="B4" data-key="j"><span class="key-label">B4<br><small>J</small></span></div>
+                    <div class="piano-key white-key" data-note="C5" data-key="k"><span class="key-label">C5<br><small>K</small></span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parameters Sidebar (Right Side) -->
+        <div class="sidebar-column">
+            <!-- Synth Voice Panel -->
+            <div class="studio-panel parameters-wrapper">
+                <h3 style="font-size: 13px; font-weight: 700; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; color: var(--text-primary);">
+                    Synth Voice Settings
+                </h3>
+
+                <!-- Waveform Selectors -->
+                <div class="param-group">
+                    <label class="param-label">Oscillator Waveform</label>
+                    <div class="waveform-selectors">
+                        <button class="btn-wave active" data-wave="sine" title="Sine Wave (Smooth)">
+                            <i class="fas fa-wave-square" style="font-size:13px; color:#1db954;"></i>
+                            <span>Sine</span>
+                        </button>
+                        <button class="btn-wave" data-wave="triangle" title="Triangle Wave (Warm)">
+                            <i class="fas fa-caret-up" style="font-size:16px;"></i>
+                            <span>Triangle</span>
+                        </button>
+                        <button class="btn-wave" data-wave="sawtooth" title="Sawtooth Wave (Bright)">
+                            <i class="fas fa-sliders-h" style="transform: rotate(90deg); font-size:12px;"></i>
+                            <span>Sawtooth</span>
+                        </button>
+                        <button class="btn-wave" data-wave="square" title="Square Wave (Retro)">
+                            <i class="fas fa-stop" style="font-size:11px;"></i>
+                            <span>Square</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ADSR Envelope Slider Knobs -->
+                <div class="param-group">
+                    <label class="param-label" style="display:flex; justify-content:space-between;">
+                        <span>ADSR Envelope</span>
+                        <span id="adsr-indicator" style="font-size:10px; color:var(--text-muted);">A: 0.1s D: 0.2s S: 0.7 R: 0.5s</span>
+                    </label>
+                    
+                    <div class="adsr-sliders">
+                        <div class="adsr-slider-container">
+                            <span class="adsr-title">A</span>
+                            <div class="vertical-slider-wrapper">
+                                <input type="range" id="adsr-attack" min="0" max="200" value="10" orient="vertical">
+                            </div>
+                            <span class="adsr-value" id="attack-val">0.1s</span>
+                        </div>
+
+                        <div class="adsr-slider-container">
+                            <span class="adsr-title">D</span>
+                            <div class="vertical-slider-wrapper">
+                                <input type="range" id="adsr-decay" min="0" max="200" value="20" orient="vertical">
+                            </div>
+                            <span class="adsr-value" id="decay-val">0.2s</span>
+                        </div>
+
+                        <div class="adsr-slider-container">
+                            <span class="adsr-title">S</span>
+                            <div class="vertical-slider-wrapper">
+                                <input type="range" id="adsr-sustain" min="0" max="100" value="70" orient="vertical">
+                            </div>
+                            <span class="adsr-value" id="sustain-val">0.7</span>
+                        </div>
+
+                        <div class="adsr-slider-container">
+                            <span class="adsr-title">R</span>
+                            <div class="vertical-slider-wrapper">
+                                <input type="range" id="adsr-release" min="0" max="300" value="50" orient="vertical">
+                            </div>
+                            <span class="adsr-value" id="release-val">0.5s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Settings -->
+                <div class="param-group" style="margin-top: 20px;">
+                    <label class="param-label" style="display:flex; justify-content:space-between;">
+                        <span>Lowpass Filter Cutoff</span>
+                        <span id="filter-cutoff-val" style="font-size:11px; color:#1db954;">20000 Hz</span>
+                    </label>
+                    <input type="range" id="filter-cutoff" min="100" max="20000" value="20000" class="studio-slider">
+                </div>
+
+                <div class="param-group">
+                    <label class="param-label" style="display:flex; justify-content:space-between;">
+                        <span>Filter Resonance (Q)</span>
+                        <span id="filter-q-val" style="font-size:11px; color:#1db954;">1.0</span>
+                    </label>
+                    <input type="range" id="filter-q" min="0" max="15" step="0.1" value="1.0" class="studio-slider">
+                </div>
+            </div>
+
+            <!-- Catalog Search Panel -->
+            <div class="studio-panel search-drawer" style="margin-bottom: 20px;">
+                <h3 style="font-size: 13px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; color: var(--text-primary);">
+                    Load Song Preview
+                </h3>
+                <div class="ringtone-search-bar" style="display:flex; align-items:center; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:4px; padding:6px 12px; gap:8px;">
+                    <i class="fas fa-search" style="color: var(--text-muted); font-size:12px;"></i>
+                    <input type="text" id="studio-search-input" style="background:transparent; border:none; outline:none; color:#fff; font-size:12px; width:100%;" placeholder="Search track name or artist...">
+                </div>
+                <div id="studio-search-results" style="max-height: 180px; overflow-y: auto; margin-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+                    <!-- Search results rendered dynamically -->
+                </div>
+            </div>
+
+            <!-- Project Files Drawer Panel -->
+            <div class="studio-panel projects-drawer">
+
+                <h3 style="font-size: 13px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; color: var(--text-primary);">
+                    My Studio Projects
+                </h3>
+                
+                <div class="projects-list-container" id="projects-list">
+                    {% for song in custom_songs %}
+                        <div class="project-item {% if preloaded_song and preloaded_song.id == song.id %}active{% endif %}" data-id="{{ song.id }}">
+                            <div class="project-item-meta">
+                                <span class="project-item-title">{{ song.title }}</span>
+                                <span class="project-item-details">{{ song.bpm }} BPM &bull; {{ song.updated_at|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="project-item-actions">
+                                <button class="btn-project-load" title="Load Project" data-id="{{ song.id }}"><i class="fas fa-folder-open"></i></button>
+                                <button class="btn-project-delete" title="Delete Project" data-id="{{ song.id }}"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="empty-projects-message" style="font-size:12px; text-align:center; color:var(--text-muted); padding: 20px 0;">
+                            No projects saved yet.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save Project Modal Dialogue Box -->
+<div class="playlist-modal" id="save-project-modal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; padding: 24px;">
+        <div class="modal-header" style="margin-bottom:16px;">
+            <h3 class="modal-title">Save Composition</h3>
+            <span class="modal-close" id="save-modal-close-btn">&times;</span>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label for="project-name-input" style="font-size:12px; font-weight:600; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:8px;">Song Title</label>
+            <input type="text" id="project-name-input" style="background:#282828; border:1px solid #3e3e3e; border-radius:4px; padding:10px; width:100%; color:#fff; font-size:14px; box-sizing: border-box;" placeholder="e.g., Summer Chill Beat" value="{% if preloaded_song %}{{ preloaded_song.title }}{% endif %}">
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px;">
+            <button class="btn-outline" id="save-modal-cancel-btn" style="padding: 10px 20px;">Cancel</button>
+            <button class="btn-primary" id="save-modal-confirm-btn" style="padding: 10px 20px;">Save Project</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/music_maker.js' %}?v=1.0.1"></script>
+{% endblock %}

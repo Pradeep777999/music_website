@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nexonic - Premium Music Web Player{% endblock %}
+
+{% block content %}
+<!-- Continue Listening / Hero Banner -->
+{% if continue_listening %}
+<div class="section-container" style="margin-bottom: 32px;">
+    <div style="background: linear-gradient(135deg, #1e1e24 0%, #0c0c0e 100%); border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); padding: 32px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <img src="{{ continue_listening.album_image|default:'https://picsum.photos/150' }}" alt="" style="width: 80px; height: 80px; border-radius: var(--border-radius-md); object-fit: cover; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+            <div>
+                <div style="font-size: 11px; font-weight: 700; color: var(--brand-green); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px;">Continue Listening</div>
+                <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">{{ continue_listening.track_name }}</h2>
+                <p style="font-size: 13px; color: var(--text-muted);">{{ continue_listening.artist_name }} &bull; {{ continue_listening.album_name }}</p>
+            </div>
+        </div>
+        
+        {% if continue_listening.preview_url %}
+            <button class="btn-primary" data-action="play-track"
+                    data-track-id="{{ continue_listening.spotify_track_id }}"
+                    data-track-name="{{ continue_listening.track_name }}"
+                    data-track-artist="{{ continue_listening.artist_name }}"
+                    data-track-album="{{ continue_listening.album_name }}"
+                    data-track-art="{{ continue_listening.album_image }}"
+                    data-track-duration="{{ continue_listening.duration_ms }}"
+                    data-track-preview="{{ continue_listening.preview_url }}"
+                    style="padding: 14px 36px;">
+                <i class="fas fa-play" style="margin-right: 8px;"></i> RESUME
+            </button>
+        {% else %}
+            <span style="font-size:12px; color:var(--text-muted); background: rgba(255,255,255,0.05); padding: 8px 16px; border-radius: 20px;">Preview not available</span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Recommended Music Section -->
+{% if recommended_music %}
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">Recommended for You</h2>
+    </div>
+    
+    <div class="media-grid">
+        {% for track in recommended_music %}
+            <div class="media-card" 
+                 data-track-id="{{ track.id }}"
+                 data-track-name="{{ track.name }}"
+                 data-track-artist="{{ track.artists.0.name }}"
+                 data-track-album="{{ track.album.name }}"
+                 data-track-art="{{ track.album.images.0.url }}"
+                 data-track-duration="{{ track.duration_ms }}"
+                 data-track-preview="{{ track.preview_url|default:'' }}"
+                 onclick="window.playSong && window.playSong(this);"
+                 style="cursor: pointer;">
+                <div class="card-image-wrapper">
+                    {% if track.album.images.0.url %}
+                        <img class="card-image" src="{{ track.album.images.0.url }}" alt="{{ track.name }}">
+                    {% else %}
+                        <img class="card-image" src="https://picsum.photos/300" alt="{{ track.name }}">
+                    {% endif %}
+                    
+                    {% if track.preview_url %}
+                        <button class="card-play-btn" data-action="play-track"
+                                data-track-id="{{ track.id }}"
+                                data-track-name="{{ track.name }}"
+                                data-track-artist="{{ track.artists.0.name }}"
+                                data-track-album="{{ track.album.name }}"
+                                data-track-art="{{ track.album.images.0.url }}"
+                                data-track-duration="{{ track.duration_ms }}"
+                                data-track-preview="{{ track.preview_url }}"
+                                onclick="event.stopPropagation(); window.playSong && window.playSong(this);">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="card-title">{{ track.name }}</div>
+                <div class="card-subtitle">{{ track.artists.0.name }}</div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Featured Playlists Section -->
+{% if featured_playlists %}
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">Featured Playlists</h2>
+    </div>
+    
+    <div class="media-grid">
+        {% for pl in featured_playlists %}
+            <div class="media-card" onclick="window.location.href='/spotify-playlist/{{ pl.id }}/?name={{ pl.name|urlencode }}'">
+                <div class="card-image-wrapper">
+                    {% if pl.images.0.url %}
+                        <img class="card-image" src="{{ pl.images.0.url }}" alt="{{ pl.name }}">
+                    {% else %}
+                        <img class="card-image" src="https://picsum.photos/300" alt="{{ pl.name }}">
+                    {% endif %}
+                </div>
+                <div class="card-title">{{ pl.name }}</div>
+                <div class="card-subtitle">{{ pl.description|striptags }}</div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Trending Albums (New Releases) Section -->
+{% if trending_albums %}
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">Trending Albums</h2>
+    </div>
+    
+    <div class="media-grid">
+        {% for album in trending_albums %}
+            <div class="media-card" onclick="window.location.href='/album/{{ album.id }}/?name={{ album.name|urlencode }}&artist={{ album.artists.0.name|urlencode }}&image={{ album.images.0.url|urlencode }}'">
+                <div class="card-image-wrapper">
+                    {% if album.images.0.url %}
+                        <img class="card-image" src="{{ album.images.0.url }}" alt="{{ album.name }}">
+                    {% else %}
+                        <img class="card-image" src="https://picsum.photos/300" alt="{{ album.name }}">
+                    {% endif %}
+                </div>
+                <div class="card-title">{{ album.name }}</div>
+                <div class="card-subtitle">{{ album.artists.0.name }}</div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Popular Artists Section -->
+{% if popular_artists %}
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">Popular Artists</h2>
+    </div>
+    
+    <div class="media-grid">
+        {% for artist in popular_artists %}
+            <div class="media-card" onclick="window.location.href='/artist/{{ artist.id }}/?name={{ artist.name|urlencode }}'">
+                <div class="card-image-wrapper" style="border-radius: 50%;">
+                    {% if artist.images.0.url %}
+                        <img class="card-image" src="{{ artist.images.0.url }}" alt="{{ artist.name }}" style="border-radius: 50%;">
+                    {% else %}
+                        <img class="card-image" src="https://picsum.photos/300" alt="{{ artist.name }}" style="border-radius: 50%;">
+                    {% endif %}
+                </div>
+                <div class="card-title" style="text-align: center;">{{ artist.name }}</div>
+                <div class="card-subtitle" style="text-align: center;">Artist</div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Play history list (Recent) -->
+{% if recently_played %}
+<div class="section-container">
+    <div class="section-header">
+        <h2 class="section-title">Recently Played</h2>
+        <a href="{% url 'library' %}" class="section-link">See all</a>
+    </div>
+    
+    <div class="media-grid">
+        {% for r in recently_played|slice:":6" %}
+            <div class="media-card"
+                 data-track-id="{{ r.spotify_track_id }}"
+                 data-track-name="{{ r.track_name }}"
+                 data-track-artist="{{ r.artist_name }}"
+                 data-track-album="{{ r.album_name }}"
+                 data-track-art="{{ r.album_image }}"
+                 data-track-duration="{{ r.duration_ms }}"
+                 data-track-preview="{{ r.preview_url|default:'' }}"
+                 onclick="window.playSong && window.playSong(this);"
+                 style="cursor: pointer;">
+                <div class="card-image-wrapper">
+                    {% if r.album_image %}
+                        <img class="card-image" src="{{ r.album_image }}" alt="{{ r.track_name }}">
+                    {% else %}
+                        <img class="card-image" src="https://picsum.photos/300" alt="{{ r.track_name }}">
+                    {% endif %}
+                    
+                    {% if r.preview_url %}
+                        <button class="card-play-btn" data-action="play-track"
+                                data-track-id="{{ r.spotify_track_id }}"
+                                data-track-name="{{ r.track_name }}"
+                                data-track-artist="{{ r.artist_name }}"
+                                data-track-album="{{ r.album_name }}"
+                                data-track-art="{{ r.album_image }}"
+                                data-track-duration="{{ r.duration_ms }}"
+                                data-track-preview="{{ r.preview_url }}"
+                                onclick="event.stopPropagation(); window.playSong && window.playSong(this);">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="card-title">{{ r.track_name }}</div>
+                <div class="card-subtitle">{{ r.artist_name }}</div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

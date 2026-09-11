@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ringtone Maker - Nexonic{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ringtone_maker.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="ringtone-container">
+    <div class="ringtone-header">
+        <h1 class="hero-title" style="font-size: 32px; margin-bottom: 4px;">Ringtone Maker</h1>
+        <div class="ringtone-subtitle">Clip your favorite track previews or local audio files and download them as high-quality ringtones.</div>
+    </div>
+
+    <!-- Preloaded parameters from incoming views if preloaded -->
+    {% if preloaded_preview_url %}
+        <input type="hidden" id="preload-title" value="{{ preloaded_title }}">
+        <input type="hidden" id="preload-artist" value="{{ preloaded_artist }}">
+        <input type="hidden" id="preload-preview-url" value="{{ preloaded_preview_url }}">
+        <input type="hidden" id="preload-image" value="{{ preloaded_image }}">
+    {% endif %}
+
+    <!-- Success Message Alert -->
+    <div class="ringtone-success-card" id="ringtone-success-card" style="display: none;">
+        <i class="fas fa-check-circle success-icon"></i>
+        <div>
+            <h3 style="font-size: 16px; font-weight: 600; color: #28a745; margin-bottom: 4px;">Ringtone Exported Successfully!</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">The clipped WAV file has been saved to your downloads folder.</p>
+        </div>
+    </div>
+
+    <!-- Upload Panel & Dropzone -->
+    <div class="ringtone-panel" id="upload-panel">
+        <div class="upload-dropzone" id="ringtone-dropzone">
+            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+            <div class="upload-title">Drag & drop your audio file here</div>
+            <div class="upload-subtitle">Supports MP3, WAV, M4A, or FLAC &bull; Or click to browse files</div>
+            <input type="file" id="ringtone-file-input" accept="audio/*" style="display: none;">
+        </div>
+
+        <div class="ringtone-search-section">
+            <div style="font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Or load a song from Nexonic catalog</div>
+            <div class="ringtone-search-bar">
+                <i class="fas fa-search" style="color: var(--text-muted);"></i>
+                <input type="text" id="ringtone-search-input" class="ringtone-search-input" placeholder="Search for tracks with previews to trim...">
+            </div>
+            <div class="ringtone-search-results" id="ringtone-search-results">
+                <!-- Search results rendered dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loader Panel -->
+    <div class="ringtone-panel loader-container" id="ringtone-loader">
+        <div class="loader-spinner"></div>
+        <div id="loader-text" style="font-size: 14px; font-weight: 500; color: var(--text-muted);">Decoding audio data...</div>
+    </div>
+
+    <!-- Editor Workspace (Rendered after audio data is loaded) -->
+    <div class="ringtone-panel" id="ringtone-editor-section" style="display: none;">
+        <!-- Preloaded Song Details Header -->
+        <div id="ringtone-preload-info-container"></div>
+        
+        <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 16px;">DRAG MARKERS TO SELECT SECTION</div>
+        
+        <!-- Waveform visualizer track container -->
+        <div class="waveform-outer-wrapper">
+            <div class="waveform-canvas-container">
+                <canvas id="waveform-canvas" class="waveform-canvas"></canvas>
+                
+                <!-- Interaction Selection handles & layers -->
+                <div class="waveform-selection-overlay">
+                    <div class="trim-selection-highlight" id="trim-selection-highlight"></div>
+                    <div class="trim-handle trim-handle-left" id="trim-handle-left"></div>
+                    <div class="trim-handle trim-handle-right" id="trim-handle-right"></div>
+                    <div class="waveform-progress-line" id="waveform-progress-line"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inputs and Playback Controls dashboard -->
+        <div class="ringtone-dashboard">
+            <div class="dashboard-group">
+                <button class="btn-control" id="btn-play-trim" title="Play Selection">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="btn-control active" id="btn-loop-trim" title="Toggle Looping">
+                    <i class="fas fa-redo"></i>
+                </button>
+            </div>
+
+            <!-- precise start and end times -->
+            <div class="dashboard-group" style="gap: 12px;">
+                <div class="time-input-container">
+                    <span class="time-input-label">Start</span>
+                    <input type="number" step="0.01" class="time-input-field" id="trim-start-input" value="0.00">
+                    <span class="time-unit">s</span>
+                </div>
+                <div class="time-input-container">
+                    <span class="time-input-label">End</span>
+                    <input type="number" step="0.01" class="time-input-field" id="trim-end-input" value="30.00">
+                    <span class="time-unit">s</span>
+                </div>
+                <div class="time-input-container" style="background: rgba(255, 255, 255, 0.02); border-color: transparent;">
+                    <span class="time-input-label" style="color: rgba(255, 255, 255, 0.3);">Duration</span>
+                    <input type="number" class="time-input-field" id="trim-duration-input" value="30.00" disabled style="color: var(--text-muted);">
+                    <span class="time-unit" style="color: rgba(255, 255, 255, 0.3);">s</span>
+                </div>
+            </div>
+
+            <button class="btn-export" id="btn-export-ringtone" disabled>
+                <i class="fas fa-download"></i> EXPORT RINGTONE
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/ringtone_maker.js' %}?v=1.0.2"></script>
+{% endblock %}

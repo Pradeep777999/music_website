@@ -1,0 +1,1214 @@
+<!-- ==========================================================================
+     SONY AI ROBO & MUSIC CHATBOT WIDGET (Corner Docked Global Assistant)
+     Ultra-Premium Luxury Aesthetic + Spoken Voice Feedback (SpeechSynthesis)
+     Seamless Dashboard Navigation ("open podcast", "open library", etc.)
+     Movie/Song Playback with Voice Announcements ("Playing song from Interstellar")
+     ========================================================================== -->
+<style>
+    /* Scoped Design Tokens & Container */
+    .sony-ai-dock-container {
+        position: fixed;
+        bottom: 95px; /* Floats above bottom persistent music player bar */
+        right: 28px;
+        z-index: 9999;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .sony-ai-dock-container * {
+        box-sizing: border-box;
+    }
+
+    /* ==========================================
+       1. SMALL ROBO ORB (MINIMIZED MODE)
+       ========================================== */
+    .sony-ai-robo-orb {
+        position: relative;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(13, 15, 28, 0.92);
+        border: 2px solid rgba(0, 198, 255, 0.35);
+        box-shadow: 0 0 25px rgba(0, 198, 255, 0.25), 0 12px 30px rgba(0, 0, 0, 0.75);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+        user-select: none;
+    }
+
+    .sony-ai-robo-orb:hover {
+        transform: scale(1.12);
+        box-shadow: 0 0 35px rgba(255, 0, 127, 0.45), 0 16px 36px rgba(0, 0, 0, 0.85);
+    }
+
+    .sony-ai-robo-orb .orb-liquid-ring {
+        position: absolute;
+        inset: -6px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #00C6FF, #7F00FF, #FF007F, #FFD700, #00C6FF);
+        background-size: 300% 300%;
+        filter: blur(8px);
+        opacity: 0.9;
+        z-index: -1;
+        animation: sonyOrbFluidRing 5s ease infinite;
+    }
+
+    @keyframes sonyOrbFluidRing {
+        0% { background-position: 0% 50%; transform: rotate(0deg); }
+        50% { background-position: 100% 50%; transform: rotate(180deg); }
+        100% { background-position: 0% 50%; transform: rotate(360deg); }
+    }
+
+    .sony-ai-robo-orb .robo-face {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* ==========================================
+       2. FULL EXPANDED LUXURY AI CARD
+       ========================================== */
+    .sony-ai-dock {
+        width: 385px;
+        display: none;
+        perspective: 1000px;
+        animation: sonyCardPopIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes sonyCardPopIn {
+        from { opacity: 0; transform: scale(0.9) translateY(15px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .sony-ai-dock .glow-aura-wrapper {
+        position: relative;
+        border-radius: 28px;
+        padding: 2px;
+    }
+
+    .sony-ai-dock .liquid-glow-layer {
+        position: absolute;
+        inset: -16px;
+        border-radius: 42px;
+        background: linear-gradient(120deg, #00C6FF, #7F00FF, #FF007F, #FFD700, #00C6FF);
+        background-size: 300% 300%;
+        filter: blur(26px);
+        opacity: 0.55;
+        z-index: -1;
+        transition: opacity 0.5s ease, transform 0.5s ease, filter 0.5s ease;
+        animation: sonyLiquidFlow 7s ease infinite;
+        pointer-events: none;
+    }
+
+    @keyframes sonyLiquidFlow {
+        0% { background-position: 0% 50%; transform: scale(0.98); }
+        50% { background-position: 100% 50%; transform: scale(1.03); }
+        100% { background-position: 0% 50%; transform: scale(0.98); }
+    }
+
+    /* 5 Distinct Luxury States */
+    .sony-ai-dock.idle .liquid-glow-layer {
+        opacity: 0.45;
+        filter: blur(24px);
+    }
+
+    .sony-ai-dock.listening .liquid-glow-layer {
+        opacity: 0.95;
+        filter: blur(32px);
+        animation: sonyListenPulse 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes sonyListenPulse {
+        0% { transform: scale(0.96); opacity: 0.75; }
+        50% { transform: scale(1.08); opacity: 1; }
+        100% { transform: scale(0.96); opacity: 0.75; }
+    }
+
+    .sony-ai-dock.processing .liquid-glow-layer {
+        opacity: 0.98;
+        filter: blur(30px);
+        animation: sonyProcessWhirl 1.4s linear infinite;
+    }
+
+    @keyframes sonyProcessWhirl {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .sony-ai-dock.speaking .liquid-glow-layer {
+        opacity: 0.98;
+        filter: blur(28px);
+        animation: sonySpeakAura 0.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes sonySpeakAura {
+        0% { transform: scale(0.99); opacity: 0.75; }
+        100% { transform: scale(1.06); opacity: 1; }
+    }
+
+    .sony-ai-dock.playing .liquid-glow-layer {
+        opacity: 0.85;
+        filter: blur(26px);
+    }
+
+    /* Luxury Glass Card Surface */
+    .sony-ai-dock .widget-card {
+        position: relative;
+        background: rgba(12, 14, 26, 0.92);
+        border: 1px solid rgba(0, 198, 255, 0.28);
+        border-radius: 24px;
+        padding: 18px 20px;
+        backdrop-filter: blur(36px) saturate(180%);
+        -webkit-backdrop-filter: blur(36px) saturate(180%);
+        box-shadow: 0 0 35px rgba(0, 198, 255, 0.12), 0 24px 50px rgba(0, 0, 0, 0.75);
+        color: #E2E8F0;
+    }
+
+    .sony-ai-dock .widget-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+    }
+
+    .sony-ai-dock .ai-identity {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .sony-ai-dock .ai-orb-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(0, 198, 255, 0.2), rgba(255, 0, 127, 0.2));
+        border: 1px solid rgba(0, 198, 255, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 15px rgba(0, 198, 255, 0.35);
+    }
+
+    .sony-ai-dock .ai-name {
+        font-weight: 700;
+        font-size: 0.98rem;
+        background: linear-gradient(90deg, #FFF, #A5B4FC);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1.2;
+    }
+
+    .sony-ai-dock .ai-subtitle {
+        font-size: 0.71rem;
+        color: #94A3B8;
+    }
+
+    .sony-ai-dock .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .sony-ai-dock .state-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(148, 163, 184, 0.12);
+        color: #94A3B8;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .sony-ai-dock.listening .state-pill {
+        background: rgba(0, 198, 255, 0.18);
+        color: #00C6FF;
+        border-color: rgba(0, 198, 255, 0.5);
+    }
+
+    .sony-ai-dock.processing .state-pill {
+        background: rgba(255, 0, 127, 0.18);
+        color: #FF007F;
+        border-color: rgba(255, 0, 127, 0.5);
+    }
+
+    .sony-ai-dock.speaking .state-pill {
+        background: rgba(255, 215, 0, 0.18);
+        color: #FFD700;
+        border-color: rgba(255, 215, 0, 0.5);
+    }
+
+    .sony-ai-dock.playing .state-pill {
+        background: rgba(168, 85, 247, 0.18);
+        color: #C084FC;
+        border-color: rgba(168, 85, 247, 0.5);
+    }
+
+    .sony-ai-dock .minimize-btn {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #94A3B8;
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .sony-ai-dock .minimize-btn:hover {
+        background: rgba(255, 255, 255, 0.18);
+        color: #FFF;
+    }
+
+    .sony-ai-dock .widget-body {
+        background: rgba(0, 0, 0, 0.38);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 14px;
+        margin-bottom: 14px;
+    }
+
+    .sony-ai-dock .visualizer-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        height: 28px;
+        margin: 4px 0 8px;
+    }
+
+    .sony-ai-dock .v-bar {
+        width: 3.5px;
+        height: 6px;
+        border-radius: 99px;
+        background: linear-gradient(180deg, #00C6FF, #FF007F);
+        box-shadow: 0 0 6px rgba(0, 198, 255, 0.5);
+        transition: height 0.15s ease;
+    }
+
+    .sony-ai-dock.listening .v-bar {
+        animation: sonyBarPulseListen 0.45s ease-in-out infinite alternate;
+    }
+
+    .sony-ai-dock.processing .v-bar {
+        animation: sonyBarPulseProcess 0.3s ease-in-out infinite alternate;
+    }
+
+    .sony-ai-dock.speaking .v-bar {
+        background: linear-gradient(180deg, #FFD700, #FF007F);
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+        animation: sonyBarPulseSpeak 0.22s ease-in-out infinite alternate;
+    }
+
+    .sony-ai-dock.playing .v-bar {
+        animation: sonyBarPulsePlay 0.25s ease-in-out infinite alternate;
+    }
+
+    @keyframes sonyBarPulseListen {
+        0% { height: 6px; opacity: 0.6; }
+        100% { height: 24px; opacity: 1; }
+    }
+
+    @keyframes sonyBarPulseProcess {
+        0% { height: 10px; background: #FF007F; }
+        100% { height: 24px; background: #00C6FF; }
+    }
+
+    @keyframes sonyBarPulseSpeak {
+        0% { height: 12px; }
+        100% { height: 26px; }
+    }
+
+    @keyframes sonyBarPulsePlay {
+        0% { height: 8px; }
+        50% { height: 26px; }
+        100% { height: 14px; }
+    }
+
+    .sony-ai-dock .dialog-text {
+        text-align: center;
+        font-size: 0.89rem;
+        font-weight: 700;
+        color: #FFF;
+        margin-bottom: 3px;
+    }
+
+    .sony-ai-dock .sub-dialog {
+        text-align: center;
+        font-size: 0.72rem;
+        color: #94A3B8;
+    }
+
+    .sony-ai-dock .now-playing-card {
+        display: none;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+
+    .sony-ai-dock.playing .now-playing-card,
+    .sony-ai-dock.speaking .now-playing-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .sony-ai-dock .album-art-disc {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .sony-ai-dock .track-info-col {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .sony-ai-dock .np-title {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: #FFF;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .sony-ai-dock .np-artist {
+        font-size: 0.72rem;
+        color: #94A3B8;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .sony-ai-dock .stop-btn {
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        color: #F87171;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: all 0.2s;
+    }
+
+    .sony-ai-dock .stop-btn:hover {
+        background: #EF4444;
+        color: #FFF;
+    }
+
+    .sony-ai-dock .controls-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .sony-ai-dock .mic-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 198, 255, 0.3);
+        background: rgba(255, 255, 255, 0.06);
+        color: #FFF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.25s;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .sony-ai-dock .mic-btn:hover {
+        background: rgba(0, 198, 255, 0.2);
+        border-color: #00C6FF;
+        box-shadow: 0 0 12px rgba(0, 198, 255, 0.4);
+    }
+
+    .sony-ai-dock.listening .mic-btn {
+        background: #00C6FF;
+        color: #000;
+        border-color: #FFF;
+        box-shadow: 0 0 18px #00C6FF;
+    }
+
+    .sony-ai-dock .chat-input-form {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.42);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 0 4px 0 12px;
+    }
+
+    .sony-ai-dock .chat-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #FFF;
+        font-size: 0.82rem;
+        padding: 10px 0;
+    }
+
+    .sony-ai-dock .send-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        border: none;
+        color: #FFF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .sony-ai-dock .send-btn:hover {
+        background: #00C6FF;
+        color: #000;
+    }
+
+    @media (max-width: 640px) {
+        .sony-ai-dock {
+            width: calc(100vw - 28px);
+        }
+    }
+</style>
+
+<div class="sony-ai-dock-container" id="sonyAiContainer">
+    <!-- 1. SMALL ROBO ORB (MINIMIZED DEFAULT) -->
+    <div id="sonyAiRoboOrb" class="sony-ai-robo-orb" title="Click to open Sony AI Voice & Chat Assistant">
+        <div class="orb-liquid-ring"></div>
+        <div class="robo-face">
+            <span style="font-size: 32px; line-height: 1; filter: drop-shadow(0 2px 8px rgba(0, 198, 255, 0.6));">🤖</span>
+        </div>
+    </div>
+
+    <!-- 2. EXPANDED LUXURY AI CHATBOT CARD -->
+    <aside id="sonyAiWidgetDock" class="sony-ai-dock idle" aria-label="Sony AI Music Assistant">
+        <div class="glow-aura-wrapper">
+            <div class="liquid-glow-layer"></div>
+
+            <div class="widget-card">
+                <!-- Header -->
+                <div class="widget-header">
+                    <div class="ai-identity">
+                        <div class="ai-orb-icon">
+                            <span style="font-size: 17px; line-height: 1;">🤖</span>
+                        </div>
+                        <div>
+                            <div class="ai-name">Sony AI Assistant</div>
+                            <div class="ai-subtitle">Songs • Podcasts • Studio • Navigation</div>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <div id="sonyStatePill" class="state-pill">IDLE</div>
+                        <button id="sonyMinimizeBtn" class="minimize-btn" title="Minimize to Robo Orb">
+                            <i class="fas fa-minus" style="font-size: 10px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Body & Visualizer -->
+                <div class="widget-body">
+                    <div class="visualizer-row">
+                        <div class="v-bar"></div>
+                        <div class="v-bar"></div>
+                        <div class="v-bar"></div>
+                        <div class="v-bar"></div>
+                        <div class="v-bar"></div>
+                        <div class="v-bar"></div>
+                        <div class="v-bar"></div>
+                        <div class="v-bar"></div>
+                    </div>
+
+                    <div id="sonyDialogText" class="dialog-text">Say "Hey Sony" or tap microphone</div>
+                    <div id="sonySubDialog" class="sub-dialog">Voice &amp; chat assistance across all pages</div>
+
+                    <!-- Now Playing Card inside chatbot -->
+                    <div id="sonyNowPlayingCard" class="now-playing-card">
+                        <img id="sonyNpArt" class="album-art-disc" src="https://picsum.photos/100" alt="">
+                        <div class="track-info-col">
+                            <div id="sonyNpTitle" class="np-title">Track Title</div>
+                            <div id="sonyNpArtist" class="np-artist">Artist</div>
+                        </div>
+                        <button id="sonyStopBtn" class="stop-btn" title="Stop Playback">
+                            <i class="fas fa-stop" style="font-size: 12px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="controls-row">
+                    <button id="sonyMicBtn" class="mic-btn" title="Start Voice Command">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <form id="sonyChatForm" class="chat-input-form" onsubmit="handleSonyChatSubmit(event)">
+                        <input id="sonyChatInput" type="text" class="chat-input" placeholder="Ask Sony anything..." autocomplete="off">
+                        <button type="submit" class="send-btn" title="Send Request">
+                            <i class="fas fa-paper-plane" style="font-size: 11px;"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<script>
+(function() {
+    const roboOrb = document.getElementById('sonyAiRoboOrb');
+    const dock = document.getElementById('sonyAiWidgetDock');
+    const minimizeBtn = document.getElementById('sonyMinimizeBtn');
+    const statePill = document.getElementById('sonyStatePill');
+    const dialogText = document.getElementById('sonyDialogText');
+    const subDialog = document.getElementById('sonySubDialog');
+    const npArt = document.getElementById('sonyNpArt');
+    const npTitle = document.getElementById('sonyNpTitle');
+    const npArtist = document.getElementById('sonyNpArtist');
+    const stopBtn = document.getElementById('sonyStopBtn');
+    const micBtn = document.getElementById('sonyMicBtn');
+    const chatInput = document.getElementById('sonyChatInput');
+
+    let sonyState = 'idle';
+    let synthAudio = null;
+    let speechRec = null;
+    let isExplicitListening = false;
+
+    // Expand & Minimize Orb logic
+    function expandSonyDock() {
+        roboOrb.style.display = 'none';
+        dock.style.display = 'block';
+    }
+
+    function minimizeSonyDock() {
+        dock.style.display = 'none';
+        roboOrb.style.display = 'flex';
+    }
+
+    roboOrb.addEventListener('click', () => {
+        expandSonyDock();
+    });
+
+    minimizeBtn.addEventListener('click', () => {
+        minimizeSonyDock();
+    });
+
+    function setSonyState(state, title = '', sub = '') {
+        sonyState = state;
+        dock.className = 'sony-ai-dock ' + state;
+        statePill.textContent = state.toUpperCase();
+        if (title) dialogText.textContent = title;
+        if (sub) subDialog.textContent = sub;
+    }
+
+    // Consistent Single Response Voice Cache (Fixed to a natural female tone)
+    let cachedSonyVoice = null;
+    function getSonyVoice() {
+        if (cachedSonyVoice) return cachedSonyVoice;
+        if (!('speechSynthesis' in window)) return null;
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices || voices.length === 0) return null;
+        const femaleKeywords = ['zira', 'jenny', 'aria', 'samantha', 'victoria', 'karen', 'female', 'google us english', 'hazel', 'eva', 'susan'];
+        const maleKeywords = ['david', 'mark', 'george', 'male', 'guy'];
+        cachedSonyVoice = voices.find(v => v.lang.includes('en') && femaleKeywords.some(k => v.name.toLowerCase().includes(k)));
+        if (!cachedSonyVoice) {
+            cachedSonyVoice = voices.find(v => v.lang.includes('en') && !maleKeywords.some(m => v.name.toLowerCase().includes(m)));
+        }
+        if (!cachedSonyVoice) {
+            cachedSonyVoice = voices.find(v => v.lang.includes('en')) || voices[0];
+        }
+        return cachedSonyVoice;
+    }
+    if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = () => { getSonyVoice(); };
+    }
+
+    // Speech Synthesis Helper (Speaks out loud via single consistent voice)
+    function speakSonyVoice(message, onComplete) {
+        setSonyState('speaking', message, 'Voice Assistant Speaking...');
+        try {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(message);
+                utterance.rate = 1.0;
+                utterance.pitch = 1.05; // Natural consistent tone
+
+                const chosenVoice = getSonyVoice();
+                if (chosenVoice) utterance.voice = chosenVoice;
+
+                utterance.onend = () => {
+                    if (onComplete) onComplete();
+                    else setSonyState('idle', message, 'Say "Hey Sony" or tap microphone');
+                };
+                utterance.onerror = () => {
+                    if (onComplete) onComplete();
+                    else setSonyState('idle', message, 'Say "Hey Sony" or tap microphone');
+                };
+
+                window.speechSynthesis.speak(utterance);
+                return;
+            }
+        } catch(e) {}
+
+        if (onComplete) {
+            setTimeout(onComplete, 1200);
+        } else {
+            setTimeout(() => setSonyState('idle', message, 'Say "Hey Sony" or tap microphone'), 1200);
+        }
+    }
+
+    // ==========================================
+    // SONY AI INTENT RECOGNITION SYSTEM
+    // ==========================================
+    function parseSonyIntent(rawPrompt) {
+        if (!rawPrompt || !rawPrompt.trim()) {
+            return {
+                intent: 'unknown',
+                target: '',
+                response: "Sorry, I couldn't understand that. Could you please try again?"
+            };
+        }
+
+        // Clean conversational variations: "Hey Sony", "Can you please", trailing punctuation
+        let cleaned = rawPrompt
+            .replace(/^hey\s+sony[,.]?\s*/i, '')
+            .replace(/^(?:can\s+you|could\s+you|would\s+you|i\s+want\s+to\s+(?:hear|listen\s+to)|please|kindly)\s+/i, '')
+            .replace(/\bplease\b/gi, '')
+            .replace(/[?.!]+$/, '')
+            .trim();
+
+        const lower = cleaned.toLowerCase();
+
+        // 1. PLAYER CONTROLS
+        if (lower === 'pause' || lower === 'pause music' || lower === 'stop music') {
+            return { intent: 'pause_music', target: 'music', response: 'Pausing music.' };
+        }
+        if (lower === 'resume' || lower === 'resume music' || lower === 'unpause' || lower === 'continue music') {
+            return { intent: 'resume_music', target: 'music', response: 'Resuming playback.' };
+        }
+        if (lower === 'next' || lower === 'next song' || lower === 'next track' || lower === 'skip song') {
+            return { intent: 'next_song', target: 'song', response: 'Playing the next song.' };
+        }
+        if (lower === 'previous' || lower === 'previous song' || lower === 'prev song' || lower === 'last song') {
+            return { intent: 'previous_song', target: 'song', response: 'Playing the previous song.' };
+        }
+        if (lower === 'increase volume' || lower === 'volume up' || lower === 'turn up volume') {
+            return { intent: 'increase_volume', target: 'volume', response: 'Increasing volume.' };
+        }
+        if (lower === 'mute' || lower === 'mute audio' || lower === 'silence') {
+            return { intent: 'mute', target: 'audio', response: 'Muting audio.' };
+        }
+        if (lower === 'shuffle' || lower === 'shuffle playlist' || lower === 'shuffle songs') {
+            return { intent: 'shuffle_playlist', target: 'playlist', response: 'Shuffling your playlist.' };
+        }
+        if (lower === 'repeat' || lower === 'repeat this song' || lower === 'repeat song') {
+            return { intent: 'repeat_song', target: 'song', response: 'Repeating the current song.' };
+        }
+
+        // 2. OPEN COMMANDS
+        if (lower.startsWith('open ') || lower.startsWith('go to ')) {
+            const targetRaw = cleaned.replace(/^(?:open|go\s+to)\s+/i, '').trim();
+            const targetLower = targetRaw.toLowerCase();
+
+            // Special check: "Open Podcast" or "Open <Name> Podcast"
+            if (targetLower.includes('podcast')) {
+                return {
+                    intent: 'open_podcast',
+                    target: targetRaw,
+                    response: `Opening ${targetRaw}.`
+                };
+            }
+
+            // Check if opening a playlist: e.g. "Open Playlist 1" or "Open my Playlist 1"
+            if (targetLower.includes('playlist')) {
+                const cleanTarget = targetRaw.replace(/^my\s+/i, '').trim();
+                return {
+                    intent: 'open_playlist',
+                    target: cleanTarget,
+                    response: `Opening ${cleanTarget}.`
+                };
+            }
+
+            // Library / Search / Studio / Home
+            if (targetLower === 'library' || targetLower === 'my library') {
+                return { intent: 'open_library', target: 'Library', response: 'Opening your Library.' };
+            }
+            if (targetLower === 'search') {
+                return { intent: 'open_search', target: 'Search', response: 'Opening Search.' };
+            }
+            if (targetLower.includes('studio') || targetLower.includes('music maker')) {
+                return { intent: 'open_studio', target: 'Song Studio', response: 'Opening Song Studio.' };
+            }
+            if (targetLower.includes('ringtone')) {
+                return { intent: 'open_ringtone_maker', target: 'Ringtone Maker', response: 'Opening Ringtone Maker.' };
+            }
+            if (targetLower === 'home' || targetLower === 'dashboard') {
+                return { intent: 'open_home', target: 'Home', response: 'Opening Home Dashboard.' };
+            }
+
+            // Generic Open fallback
+            const genericTarget = targetRaw.replace(/^my\s+/i, '').trim();
+            return {
+                intent: 'open_target',
+                target: genericTarget,
+                response: `Opening ${genericTarget}.`
+            };
+        }
+
+        // 3. CREATE PLAYLIST
+        if (lower.startsWith('create ') && lower.includes('playlist')) {
+            let nameMatch = cleaned.match(/create\s+(?:a\s+)?playlist\s+(?:named?|as)\s+(.+)/i);
+            let name = 'My AI Playlist';
+            if (nameMatch && nameMatch[1]) {
+                name = nameMatch[1].trim();
+            } else {
+                name = cleaned.replace(/create\s+(?:a\s+)?playlist/i, '').trim() || 'My AI Playlist';
+            }
+            return {
+                intent: 'create_playlist',
+                target: name,
+                response: `Creating playlist ${name}.`
+            };
+        }
+
+        // 4. SEARCH COMMANDS
+        if (lower.startsWith('search ') || lower.startsWith('search for ')) {
+            const targetRaw = cleaned.replace(/^search\s+(?:for\s+)?/i, '').trim();
+            return {
+                intent: 'search',
+                target: targetRaw,
+                response: `Searching for ${targetRaw}.`
+            };
+        }
+
+        // 5. PLAY COMMANDS
+        if (lower.startsWith('play ') || lower.startsWith('hear ') || lower.startsWith('listen to ')) {
+            const playSubject = cleaned.replace(/^(?:play|hear|listen\s+to)\s+/i, '').trim();
+            const playLower = playSubject.toLowerCase();
+
+            // E.g. "Play my Favorites playlist"
+            if (playLower.includes('playlist')) {
+                const responsePhrase = playSubject.replace(/^my\s+/i, 'your ');
+                return {
+                    intent: 'play_playlist',
+                    target: playSubject,
+                    response: `Playing ${responsePhrase}.`
+                };
+            }
+
+            // E.g. "Play songs by Arijit Singh"
+            if (playLower.startsWith('songs by ') || playLower.startsWith('music by ') || playLower.startsWith('artist ')) {
+                const artistName = playSubject.replace(/^(?:songs\s+by|music\s+by|artist)\s+/i, '').trim();
+                return {
+                    intent: 'play_artist',
+                    target: artistName,
+                    response: `Playing songs by ${artistName}.`
+                };
+            }
+
+            // E.g. "Play songs from Salaar"
+            if (playLower.startsWith('songs from ') || playLower.startsWith('music from ') || playLower.startsWith('album ')) {
+                const albumName = playSubject.replace(/^(?:songs\s+from|music\s+from|album)\s+/i, '').trim();
+                return {
+                    intent: 'play_album',
+                    target: albumName,
+                    response: `Playing songs from ${albumName}.`
+                };
+            }
+
+            // E.g. "Play Sooseki", "Play Naa Ready"
+            return {
+                intent: 'play_song',
+                target: playSubject,
+                response: `Playing ${playSubject}.`
+            };
+        }
+
+        // 6. Direct song/phrase fallback
+        if (cleaned.length > 1) {
+            return {
+                intent: 'play_song',
+                target: cleaned,
+                response: `Playing ${cleaned}.`
+            };
+        }
+
+        // 7. UNKNOWN COMMAND FALLBACK
+        return {
+            intent: 'unknown',
+            target: '',
+            response: "Sorry, I couldn't understand that. Could you please try again?"
+        };
+    }
+
+    // ==========================================
+    // INTENT EXECUTION LAYER
+    // ==========================================
+    async function executeSonyIntent(parsed, rawPrompt) {
+        const { intent, target, response } = parsed;
+
+        // Ensure UI displays generated response exactly as spoken by TTS
+        setSonyState('speaking', response, `Intent: ${intent} | Target: ${target || 'N/A'}`);
+
+        speakSonyVoice(response, async () => {
+            switch (intent) {
+                case 'pause_music':
+                    if (window.player && typeof window.player.pause === 'function') window.player.pause();
+                    setSonyState('idle', response, 'Playback Paused');
+                    break;
+                case 'resume_music':
+                    if (window.player && typeof window.player.play === 'function') window.player.play();
+                    setSonyState('playing', response, 'Playback Resumed');
+                    break;
+                case 'next_song':
+                    if (window.player && typeof window.player.next === 'function') window.player.next();
+                    setSonyState('playing', response, 'Playing Next Song');
+                    break;
+                case 'previous_song':
+                    if (window.player && typeof window.player.prev === 'function') window.player.prev();
+                    setSonyState('playing', response, 'Playing Previous Song');
+                    break;
+                case 'increase_volume':
+                    if (window.player && window.player.audio) {
+                        window.player.audio.volume = Math.min(1.0, window.player.audio.volume + 0.2);
+                    }
+                    setSonyState('playing', response, 'Volume Increased');
+                    break;
+                case 'mute':
+                    if (window.player && window.player.audio) {
+                        window.player.audio.muted = true;
+                    }
+                    setSonyState('idle', response, 'Audio Muted');
+                    break;
+                case 'shuffle_playlist':
+                    if (window.player && typeof window.player.toggleShuffle === 'function') window.player.toggleShuffle();
+                    setSonyState('playing', response, 'Shuffle Enabled');
+                    break;
+                case 'repeat_song':
+                    if (window.player && typeof window.player.toggleRepeat === 'function') window.player.toggleRepeat();
+                    setSonyState('playing', response, 'Repeat Enabled');
+                    break;
+                case 'unknown':
+                    setSonyState('idle', response, 'Try saying "Play Sooseki" or "Open Playlist 1"');
+                    break;
+
+                case 'open_podcast':
+                    if (target.toLowerCase() === 'podcast' || target.toLowerCase() === 'podcasts') {
+                        window.location.href = '/podcasts/';
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/search/?q=${encodeURIComponent(target)}`);
+                        const data = await res.json();
+                        if (data.success && data.shows && data.shows.length > 0) {
+                            window.location.href = `/podcast/${data.shows[0].id}/`;
+                            return;
+                        }
+                    } catch (e) {}
+                    window.location.href = '/podcasts/';
+                    break;
+
+                case 'open_playlist':
+                case 'play_playlist':
+                    const cleanName = target.replace(/^my\s+/i, '').replace(/\s+playlist$/i, '').trim();
+                    try {
+                        const res = await fetch('/api/my-playlists/');
+                        const data = await res.json();
+                        if (data.success && data.playlists) {
+                            const matched = data.playlists.find(p => p.name.toLowerCase().includes(cleanName.toLowerCase()));
+                            if (matched) {
+                                window.location.href = `/playlists/${matched.id}/`;
+                                return;
+                            }
+                        }
+                    } catch (e) {}
+                    try {
+                        const searchRes = await fetch(`/search/?q=${encodeURIComponent(cleanName)}`);
+                        const searchData = await searchRes.json();
+                        if (searchData.success && searchData.playlists && searchData.playlists.length > 0) {
+                            window.location.href = `/search/?q=${encodeURIComponent(cleanName)}`;
+                            return;
+                        }
+                    } catch (e) {}
+                    window.location.href = '/library/';
+                    break;
+
+                case 'open_library':
+                    window.location.href = '/library/';
+                    break;
+                case 'open_search':
+                    window.location.href = '/search/';
+                    break;
+                case 'open_studio':
+                    window.location.href = '/music-maker/';
+                    break;
+                case 'open_ringtone_maker':
+                    window.location.href = '/ringtone-maker/';
+                    break;
+                case 'open_home':
+                    window.location.href = '/';
+                    break;
+                case 'open_target':
+                    window.location.href = `/search/?q=${encodeURIComponent(target)}`;
+                    break;
+
+                case 'create_playlist':
+                    try {
+                        const res = await fetch(`/api/create-named/?name=${encodeURIComponent(target)}`);
+                        const data = await res.json();
+                        if (data.success) {
+                            npArt.src = 'https://picsum.photos/id/1025/100/100';
+                            npTitle.textContent = `Playlist: ${data.name}`;
+                            npArtist.textContent = 'Created Successfully';
+                            setSonyState('playing', `Created: "${data.name}"`, 'Opening your new playlist...');
+                            setTimeout(() => {
+                                window.location.href = data.redirect_url || '/library/';
+                            }, 1000);
+                        }
+                    } catch (e) {}
+                    break;
+
+                case 'search':
+                    window.location.href = `/search/?q=${encodeURIComponent(target)}`;
+                    break;
+
+                case 'play_song':
+                case 'play_album':
+                case 'play_artist':
+                default:
+                    let searchQuery = target || rawPrompt;
+                    if (searchQuery.toLowerCase().includes('interstellar')) searchQuery = 'Cornfield Chase';
+                    else if (searchQuery.toLowerCase().includes('inception')) searchQuery = 'Time Hans Zimmer';
+                    else if (searchQuery.toLowerCase().includes('gladiator')) searchQuery = 'Now We Are Free';
+
+                    try {
+                        const searchRes = await fetch(`/search/?q=${encodeURIComponent(searchQuery)}`, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        const data = await searchRes.json();
+
+                        if (data.success && data.tracks && data.tracks.length > 0) {
+                            const track = data.tracks[0];
+                            const artUrl = (track.album && track.album.images && track.album.images.length > 0)
+                                ? track.album.images[0].url
+                                : 'https://picsum.photos/100';
+
+                            npArt.src = artUrl;
+                            npTitle.textContent = track.name;
+                            npArtist.textContent = (track.artists && track.artists[0]) ? track.artists[0].name : 'Artist';
+
+                            setSonyState('playing', response, `Playing: ${track.name}`);
+
+                            if (window.player && window.player.setQueue) {
+                                window.player.setQueue([{
+                                    id: track.id,
+                                    name: track.name,
+                                    artist: (track.artists && track.artists[0]) ? track.artists[0].name : 'Artist',
+                                    album: track.album ? track.album.name : '',
+                                    album_art: artUrl,
+                                    duration_ms: track.duration_ms,
+                                    preview_url: track.preview_url
+                                }], 0);
+                                window.player.play();
+                            } else {
+                                playSonySynthBackup();
+                            }
+                        } else if (data.success && data.episodes && data.episodes.length > 0) {
+                            const ep = data.episodes[0];
+                            const artUrl = (ep.images && ep.images[0]) ? ep.images[0].url : 'https://picsum.photos/100';
+                            npArt.src = artUrl;
+                            npTitle.textContent = ep.name;
+                            npArtist.textContent = ep.publisher || 'Podcast';
+
+                            setSonyState('playing', response, `Playing episode: ${ep.name}`);
+                            if (window.player && window.player.setQueue) {
+                                window.player.setQueue([{
+                                    id: ep.id,
+                                    name: ep.name,
+                                    artist: (ep.show && ep.show.name) ? ep.show.name : (ep.publisher || 'Podcast'),
+                                    album: (ep.show && ep.show.name) ? ep.show.name : 'Podcast',
+                                    album_art: artUrl,
+                                    duration_ms: ep.duration_ms || 180000,
+                                    preview_url: ep.audio_preview_url || ep.preview_url || ep.audio_url || '',
+                                    is_episode: true
+                                }], 0);
+                                window.player.play();
+                            }
+                        } else if (data.success && data.shows && data.shows.length > 0) {
+                            window.location.href = `/podcast/${data.shows[0].id}/`;
+                        } else {
+                            npArt.src = 'https://picsum.photos/id/1025/100/100';
+                            npTitle.textContent = rawPrompt;
+                            npArtist.textContent = 'Sony Spatial Audio';
+                            setSonyState('playing', response, 'Synthesized Audio Response');
+                            playSonySynthBackup();
+                        }
+                    } catch (e) {
+                        npArt.src = 'https://picsum.photos/id/1025/100/100';
+                        npTitle.textContent = rawPrompt;
+                        npArtist.textContent = 'Sony Spatial Audio';
+                        setSonyState('playing', response, 'Synthesized Audio Response');
+                        playSonySynthBackup();
+                    }
+                    break;
+            }
+        });
+    }
+
+    // Comprehensive Dynamic Intent-Based Request Handler
+    async function processSonyMusicRequest(rawPrompt) {
+        expandSonyDock();
+        const parsed = parseSonyIntent(rawPrompt);
+
+        console.log("Intent:", parsed.intent, "| Target:", parsed.target, "| Response:", parsed.response);
+
+        // Immediately show the natural dynamic response on UI and speak/execute
+        await executeSonyIntent(parsed, rawPrompt);
+    }
+
+    function playSonySynthBackup() {
+        stopSonyAudio();
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AudioCtx();
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.06, ctx.currentTime);
+            gain.connect(ctx.destination);
+
+            const osc1 = ctx.createOscillator();
+            const osc2 = ctx.createOscillator();
+            osc1.frequency.setValueAtTime(196.00, ctx.currentTime);
+            osc2.frequency.setValueAtTime(293.66, ctx.currentTime);
+            osc1.connect(gain);
+            osc2.connect(gain);
+            osc1.start();
+            osc2.start();
+
+            synthAudio = {
+                stop: () => {
+                    try { osc1.stop(); osc2.stop(); ctx.close(); } catch(e) {}
+                }
+            };
+        } catch (e) {}
+    }
+
+    function stopSonyAudio() {
+        if (synthAudio) {
+            synthAudio.stop();
+            synthAudio = null;
+        }
+        if (window.player && sonyState === 'playing') {
+            try { window.player.togglePlay(); } catch(e) {}
+        }
+    }
+
+    stopBtn.addEventListener('click', () => {
+        stopSonyAudio();
+        setSonyState('idle', 'Playback Stopped', 'Say "Hey Sony" or tap microphone');
+    });
+
+    // ==========================================
+    // ROBUST VOICE RECOGNITION ENGINE
+    // ==========================================
+    function initVoiceRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return;
+
+        speechRec = new SpeechRecognition();
+        speechRec.continuous = true;
+        speechRec.interimResults = true;
+        speechRec.lang = 'en-US';
+
+        let wakeTriggered = false;
+
+        speechRec.onresult = (evt) => {
+            let finalStr = '';
+            let interimStr = '';
+            for (let i = evt.resultIndex; i < evt.results.length; ++i) {
+                if (evt.results[i].isFinal) finalStr += evt.results[i][0].transcript;
+                else interimStr += evt.results[i][0].transcript;
+            }
+            const fullStr = (finalStr || interimStr).trim();
+
+            if (isExplicitListening && finalStr) {
+                isExplicitListening = false;
+                processSonyMusicRequest(finalStr);
+                return;
+            }
+
+            const wakeRegex = /(?:hey|hi|ok|a)\s*(?:sony|sonny|soni|so need)/i;
+
+            if (wakeRegex.test(fullStr)) {
+                wakeTriggered = true;
+                expandSonyDock();
+                setSonyState('listening', 'Wake word detected!', 'Listening for command...');
+                const parts = fullStr.split(wakeRegex);
+                const cmd = parts[parts.length - 1].trim();
+                if (finalStr && cmd.length > 2) {
+                    wakeTriggered = false;
+                    processSonyMusicRequest(cmd);
+                }
+            } else if (wakeTriggered && finalStr) {
+                wakeTriggered = false;
+                processSonyMusicRequest(finalStr);
+            }
+        };
+
+        speechRec.onend = () => {
+            if (sonyState !== 'processing' && sonyState !== 'playing' && sonyState !== 'speaking') {
+                setTimeout(() => {
+                    try { speechRec.start(); } catch(e) {}
+                }, 800);
+            }
+        };
+
+        try { speechRec.start(); } catch(e) {}
+    }
+
+    micBtn.addEventListener('click', () => {
+        expandSonyDock();
+        if (sonyState === 'listening' && isExplicitListening) {
+            setSonyState('idle', 'Say "Hey Sony"', 'Voice & chat assistance');
+            isExplicitListening = false;
+        } else {
+            isExplicitListening = true;
+            setSonyState('listening', 'Microphone Active...', 'Speak now: "Open podcasts" or "Play Interstellar"');
+            try { if (speechRec) speechRec.start(); } catch(e) {}
+        }
+    });
+
+    window.handleSonyChatSubmit = function(event) {
+        event.preventDefault();
+        const query = chatInput.value.trim();
+        if (!query) return;
+        chatInput.value = '';
+        processSonyMusicRequest(query);
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+        initVoiceRecognition();
+    });
+})();
+</script>

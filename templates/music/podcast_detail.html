@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ show.name }} - Nexonic{% endblock %}
+
+{% block extra_css %}
+<style>
+    .podcast-header {
+        display: flex;
+        gap: 32px;
+        align-items: flex-end;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+    .podcast-cover {
+        width: 192px;
+        height: 192px;
+        border-radius: var(--border-radius-lg);
+        object-fit: cover;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .podcast-info {
+        flex: 1;
+        min-width: 280px;
+    }
+    .podcast-type {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #1db954;
+        letter-spacing: 1.5px;
+        margin-bottom: 8px;
+    }
+    .podcast-title {
+        font-size: 36px;
+        font-weight: 800;
+        margin: 0 0 8px;
+        color: #fff;
+        line-height: 1.2;
+    }
+    .podcast-publisher {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 16px;
+        color: var(--text-muted);
+    }
+    .btn-follow {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: #fff;
+        padding: 8px 24px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-follow:hover {
+        border-color: #fff;
+        transform: scale(1.03);
+    }
+    .btn-follow.following {
+        background: rgba(255,255,255,0.1);
+        border-color: transparent;
+    }
+    .episode-row {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md);
+        padding: 20px;
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        transition: background 0.2s, transform 0.2s;
+    }
+    .episode-row:hover {
+        background: rgba(255,255,255,0.05);
+        transform: translateY(-2px);
+    }
+    .episode-image-wrapper {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        flex-shrink: 0;
+        border-radius: var(--border-radius-sm);
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .episode-play-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+    .episode-row:hover .episode-play-overlay {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="section-container">
+    <!-- Podcast Header -->
+    <div class="podcast-header">
+        {% if show.images.0.url %}
+            <img class="podcast-cover" src="{{ show.images.0.url }}" alt="{{ show.name }}">
+        {% else %}
+            <img class="podcast-cover" src="https://picsum.photos/300" alt="{{ show.name }}">
+        {% endif %}
+        
+        <div class="podcast-info">
+            <div class="podcast-type">Podcast</div>
+            <h1 class="podcast-title">{{ show.name }}</h1>
+            <p class="podcast-publisher">Publisher: {{ show.publisher }}</p>
+            
+            <button class="btn-follow {% if is_saved %}following{% endif %}" id="follow-btn">
+                <i class="{% if is_saved %}fas fa-check{% else %}fas fa-plus{% endif %}"></i>
+                <span>{% if is_saved %}Following{% else %}Follow{% endif %}</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Description -->
+    <div style="margin-bottom: 32px;">
+        <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 12px; color: #fff;">About this Show</h2>
+        <p style="font-size: 14px; color: var(--text-muted); line-height: 1.6; max-width: 800px; margin: 0;">{{ show.description }}</p>
+    </div>
+    
+    <!-- Episodes List -->
+    <div>
+        <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 16px; color: #fff;">Episodes</h2>
+        
+        <div class="podcast-episodes-list" style="display: flex; flex-direction: column; gap: 20px;">
+            {% for ep in episodes %}
+                <div class="episode-row" 
+                     data-track-id="{{ ep.id }}" 
+                     data-track-name="{{ ep.name }}" 
+                     data-track-artist="{{ show.name }}" 
+                     data-track-album="Podcast Episode" 
+                     data-track-art="{% if ep.images.0.url %}{{ ep.images.0.url }}{% else %}{{ show.images.0.url }}{% endif %}" 
+                     data-track-duration="{{ ep.duration_ms }}" 
+                     data-track-preview="{{ ep.audio_preview_url|default:'' }}"
+                     data-track-is-episode="true">
+                    
+                    <div class="episode-image-wrapper">
+                        {% if ep.images.0.url %}
+                            <img src="{{ ep.images.0.url }}" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% elif show.images.0.url %}
+                            <img src="{{ show.images.0.url }}" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% else %}
+                            <img src="https://picsum.photos/100" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% endif %}
+                        
+                        <div class="episode-play-overlay" data-action="play-track">
+                            <i class="fas fa-play" style="color: #fff; font-size: 20px;"></i>
+                        </div>
+                    </div>
+                    
+                    <div style="flex-grow: 1; min-width: 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 6px;">
+                            <h3 style="font-size: 16px; font-weight: 700; margin: 0; line-height: 1.4; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ ep.name }}</h3>
+                            <span style="font-size: 12px; color: var(--text-muted); white-space: nowrap;">{{ ep.release_date }}</span>
+                        </div>
+                        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0 0 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                            {{ ep.description }}
+                        </p>
+                        
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <button class="btn-primary" data-action="play-track" style="padding: 6px 16px; font-size: 12px; border-radius: 20px;">
+                                    <i class="fas fa-play" style="margin-right: 6px;"></i> Play Preview
+                                </button>
+
+                                <span style="font-size: 12px; color: var(--text-muted);"><i class="far fa-clock" style="margin-right: 4px;"></i> {{ ep.duration_str }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                    <i class="fas fa-list" style="font-size: 36px; margin-bottom:16px;"></i>
+                    <h3>No episodes found</h3>
+                    <p style="font-size:13px; margin: 8px 0 0;">This podcast does not have any episodes available.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const followBtn = document.getElementById('follow-btn');
+        if (followBtn) {
+            followBtn.addEventListener('click', async () => {
+                const showId = "{{ show.id }}";
+                const showName = "{{ show.name|escapejs }}";
+                const publisher = "{{ show.publisher|escapejs }}";
+                const showImage = "{% if show.images.0.url %}{{ show.images.0.url }}{% endif %}";
+                
+                try {
+                    const response = await fetch('/api/save-show/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: JSON.stringify({
+                            show_id: showId,
+                            show_name: showName,
+                            publisher: publisher,
+                            show_image: showImage
+                        })
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        if (data.saved) {
+                            followBtn.classList.add('following');
+                            followBtn.querySelector('i').className = 'fas fa-check';
+                            followBtn.querySelector('span').innerText = 'Following';
+                            window.player.showNotification("Podcast followed!", "success");
+                        } else {
+                            followBtn.classList.remove('following');
+                            followBtn.querySelector('i').className = 'fas fa-plus';
+                            followBtn.querySelector('span').innerText = 'Follow';
+                            window.player.showNotification("Podcast unfollowed.", "info");
+                        }
+                        
+                        // Dynamically update sidebar playlists/shows if they are listed there, or refresh
+                    } else {
+                        console.error("Save show failed:", data.error);
+                    }
+                } catch (e) {
+                    console.error("Save show exception:", e);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

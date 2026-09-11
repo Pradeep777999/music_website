@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Settings - Nexonic{% endblock %}
+
+{% block content %}
+<div class="settings-container" style="max-width: 700px; margin: 0 auto; padding-top: 20px;">
+    <h1 class="hero-title" style="font-size: 32px; margin-bottom: 24px;">Settings</h1>
+
+    <!-- Theme settings card -->
+    <div class="settings-section">
+        <h2 class="settings-section-title">Theme Configurations</h2>
+        
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">Dark Mode</div>
+                <div class="settings-desc">Optimize player interface for low-light environments.</div>
+            </div>
+            <div class="settings-control">
+                <label class="switch">
+                    <input type="checkbox" id="dark-mode-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">Glassmorphism Blur Effects</div>
+                <div class="settings-desc">Enable smooth translucent blurring on headers and elements.</div>
+            </div>
+            <div class="settings-control">
+                <label class="switch">
+                    <input type="checkbox" id="blur-effects-toggle" checked onclick="toggleBlurEffects(this)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Language settings placeholder -->
+    <div class="settings-section">
+        <h2 class="settings-section-title">Language preferences (Placeholder)</h2>
+        
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">Primary Display Language</div>
+                <div class="settings-desc">Select the language used for the app's user interface text.</div>
+            </div>
+            <div class="settings-control">
+                <select style="background:var(--bg-main); border:1px solid var(--border-color); color:#fff; padding:6px 12px; border-radius:4px;" disabled>
+                    <option value="en">English (US)</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications settings placeholder -->
+    <div class="settings-section">
+        <h2 class="settings-section-title">Notifications Configurations (Placeholder)</h2>
+        
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">Push Notifications</div>
+                <div class="settings-desc">Get notified about new releases, recommendations, and news.</div>
+            </div>
+            <div class="settings-control">
+                <label class="switch">
+                    <input type="checkbox" checked disabled>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">Email Newsletters</div>
+                <div class="settings-desc">Receive weekly updates on customized lists.</div>
+            </div>
+            <div class="settings-control">
+                <label class="switch">
+                    <input type="checkbox" disabled>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy configurations placeholder -->
+    <div class="settings-section">
+        <h2 class="settings-section-title">Privacy settings (Placeholder)</h2>
+        
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">Private Session</div>
+                <div class="settings-desc">Temporarily hide your listening activity from being recorded in logs.</div>
+            </div>
+            <div class="settings-control">
+                <label class="switch">
+                    <input type="checkbox" disabled>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">Data Sharing</div>
+                <div class="settings-desc">Allow sharing of anonymous listening patterns to optimize recommendations.</div>
+            </div>
+            <div class="settings-control">
+                <label class="switch">
+                    <input type="checkbox" checked disabled>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spotify API Integration and Connection Settings -->
+    <div class="settings-section">
+        <h2 class="settings-section-title">Spotify API Integration</h2>
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">Connect Spotify Developer Account</div>
+                <div class="settings-desc">Authorize your account to enable official playback streaming using the Spotify Web Playback SDK (Requires Spotify Premium).</div>
+            </div>
+            <div class="settings-control">
+                {% if is_connected %}
+                    <span style="color:#1db954; font-weight:bold; margin-right:12px;"><i class="fas fa-check-circle"></i> Connected</span>
+                    <a href="{% url 'spotify_logout' %}" class="btn-primary" style="background:#dc3545; padding:6px 12px; border-radius:4px; font-size:12px; text-decoration:none; color:#fff;">Disconnect</a>
+                {% else %}
+                    <a href="{{ spotify_auth_url }}" class="btn-primary" style="background:#1db954; color:#fff; padding:8px 16px; border-radius:20px; font-weight:bold; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+                        <i class="fab fa-spotify"></i> CONNECT SPOTIFY
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleBlurEffects(checkbox) {
+        const header = document.querySelector('.header');
+        if (header) {
+            if (checkbox.checked) {
+                header.style.backdropFilter = 'blur(12px)';
+                header.style.webkitBackdropFilter = 'blur(12px)';
+                header.style.backgroundColor = 'var(--bg-header)';
+            } else {
+                header.style.backdropFilter = 'none';
+                header.style.webkitBackdropFilter = 'none';
+                header.style.backgroundColor = '#0c0c0e';
+            }
+        }
+    }
+</script>
+{% endblock %}

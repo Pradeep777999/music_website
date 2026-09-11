@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ artist.name }} - Artist | Nexonic{% endblock %}
+
+{% block content %}
+<div class="section-container">
+    <!-- Artist Banner -->
+    <div class="hero-banner">
+        {% if artist.images.0.url %}
+            <img class="hero-cover round" id="artist-img" src="{{ artist.images.0.url }}" alt="{{ artist.name }}">
+        {% else %}
+            <img class="hero-cover round" id="artist-img" src="https://picsum.photos/400" alt="{{ artist.name }}">
+        {% endif %}
+        
+        <div class="hero-info">
+            <div class="hero-type">ARTIST</div>
+            <h1 class="hero-title" id="artist-name-title">{{ artist.name }}</h1>
+            <div class="hero-meta">
+                {% if artist.genres %}
+                    <span class="hero-meta-item">{{ artist.genres|join:", "|title }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="hero-actions">
+                {% if top_tracks %}
+                    <button class="btn-primary" id="play-artist-top-btn">
+                        <i class="fas fa-play"></i> PLAY TOP SONGS
+                    </button>
+                {% endif %}
+                
+                <button class="btn-secondary" id="save-artist-btn" style="padding: 12px 32px;">
+                    {% if is_saved %}SAVED{% else %}SAVE TO LIBRARY{% endif %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Tracks list table -->
+<div class="section-container" style="margin-top: 40px;">
+    <div class="section-header">
+        <h2 class="section-title">Popular Tracks</h2>
+    </div>
+    
+    <div class="tracks-table-container">
+        <table class="tracks-table">
+            <thead>
+                <tr>
+                    <th class="track-index-col">#</th>
+                    <th>Title</th>
+                    <th class="track-actions-col"></th>
+                    <th class="track-duration-col"><i class="far fa-clock"></i></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for track in top_tracks %}
+                    <tr data-track-id="{{ track.id }}" 
+                        data-track-name="{{ track.name }}" 
+                        data-track-artist="{{ artist.name }}" 
+                        data-track-album="{{ track.album.name|default:'Single' }}" 
+                        data-track-art="{{ track.album.images.0.url|default:artist.images.0.url }}" 
+                        data-track-duration="{{ track.duration_ms }}" 
+                        data-track-preview="{{ track.preview_url|default:'' }}">
+                        
+                        <td class="track-index-col">
+                            <span class="index-number">{{ forloop.counter }}</span>
+                            {% if track.preview_url %}
+                                <i class="fas fa-play play-icon-table" data-action="play-track"></i>
+                            {% else %}
+                                <i class="fas fa-play play-icon-table" style="opacity:0.3;cursor:not-allowed;" title="Preview not available"></i>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="track-title-cell text-primary">
+                            {% if track.album.images.0.url %}
+                                <img class="track-thumbnail" src="{{ track.album.images.0.url }}" alt="">
+                            {% else %}
+                                <img class="track-thumbnail" src="https://picsum.photos/100" alt="">
+                            {% endif %}
+                            <div>
+                                <div class="track-name-main">{{ track.name }}</div>
+                                <div class="track-artist-sub">{{ artist.name }}</div>
+                            </div>
+                        </td>
+                        
+                        <td class="track-actions-col">
+                            <button class="btn-icon {% if track.is_liked %}active{% endif %}" data-action="like-track" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex;">
+                                <i class="{% if track.is_liked %}fas fa-heart text-success{% else %}far fa-heart{% endif %}"></i>
+                            </button>
+                            <button class="btn-icon" data-action="add-to-playlist" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex;">
+                                <i class="fas fa-plus"></i>
+                            </button>
+
+                            <!-- Make Ringtone -->
+                            {% if track.preview_url %}
+                                <a href="{% url 'ringtone_maker' %}?track_id={{ track.id }}&preview_url={{ track.preview_url|urlencode }}&title={{ track.name|urlencode }}&artist={{ artist.name|urlencode }}&image={{ track.album.images.0.url|urlencode }}" class="btn-icon" title="Make Ringtone" style="border:none; width:30px; height:30px; font-size:14px; display:inline-flex; align-items:center; justify-content:center; color:inherit;">
+                                    <i class="fas fa-cut"></i>
+                                </a>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="track-duration-col">
+                            {{ track.duration_str }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                            No top tracks found for this artist.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Albums Grid -->
+{% if albums %}
+<div class="section-container" style="margin-top: 40px;">
+    <div class="section-header">
+        <h2 class="section-title">Discography</h2>
+    </div>
+    
+    <div class="media-grid">
+        {% for album in albums %}
+            <div class="media-card" onclick="window.location.href='/album/{{ album.id }}/?name={{ album.name|urlencode }}&artist={{ artist.name|urlencode }}&image={{ album.images.0.url|urlencode }}'">
+                <div class="card-image-wrapper">
+                    {% if album.images.0.url %}
+                        <img class="card-image" src="{{ album.images.0.url }}" alt="{{ album.name }}">
+                    {% else %}
+                        <img class="card-image" src="https://picsum.photos/300" alt="{{ album.name }}">
+                    {% endif %}
+                </div>
+                <div class="card-title">{{ album.name }}</div>
+                <div class="card-subtitle">{{ album.release_date|slice:":4" }} &bull; Album</div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Related Artists list grid -->
+{% if related_artists %}
+<div class="section-container" style="margin-top: 40px;">
+    <div class="section-header">
+        <h2 class="section-title">Fans Also Like</h2>
+    </div>
+    
+    <div class="media-grid">
+        {% for rel in related_artists %}
+            <div class="media-card" onclick="window.location.href='/artist/{{ rel.id }}/'">
+                <div class="card-image-wrapper" style="border-radius: 50%;">
+                    {% if rel.images.0.url %}
+                        <img class="card-image" src="{{ rel.images.0.url }}" alt="{{ rel.name }}" style="border-radius: 50%;">
+                    {% else %}
+                        <img class="card-image" src="https://picsum.photos/300" alt="{{ rel.name }}" style="border-radius: 50%;">
+                    {% endif %}
+                </div>
+                <div class="card-title" style="text-align: center;">{{ rel.name }}</div>
+                <div class="card-subtitle" style="text-align: center;">Artist</div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const saveArtistBtn = document.getElementById('save-artist-btn');
+        const playArtistTopBtn = document.getElementById('play-artist-top-btn');
+        
+        if (saveArtistBtn) {
+            saveArtistBtn.addEventListener('click', async () => {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+                
+                try {
+                    const response = await fetch('/api/save-artist/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            artist_id: '{{ artist.id }}',
+                            artist_name: document.getElementById('artist-name-title')?.innerText || '',
+                            artist_image: document.getElementById('artist-img')?.src || ''
+                        })
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        saveArtistBtn.innerText = data.saved ? 'SAVED' : 'SAVE TO LIBRARY';
+                        window.player.showNotification(data.saved ? 'Artist saved to library' : 'Artist removed from library');
+                    }
+                } catch (e) {
+                    console.error("Failed to toggle save artist status", e);
+                }
+            });
+        }
+        
+        if (playArtistTopBtn) {
+            playArtistTopBtn.addEventListener('click', () => {
+                const rows = document.querySelectorAll('tr[data-track-id]');
+                if (rows.length > 0) {
+                    const tracksList = [];
+                    rows.forEach(row => {
+                        tracksList.push({
+                            id: row.dataset.trackId,
+                            name: row.dataset.trackName,
+                            artist: row.dataset.trackArtist,
+                            album: row.dataset.trackAlbum,
+                            album_art: row.dataset.trackArt,
+                            duration_ms: parseInt(row.dataset.trackDuration || 0),
+                            preview_url: row.dataset.trackPreview || ''
+                        });
+                    });
+                    window.player.setQueue(tracksList, 0);
+                    window.player.play();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

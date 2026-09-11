@@ -1,0 +1,389 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexonic - Feel the Music, Live the Moment</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Landing CSS Stylesheet -->
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+    <!-- Theme FOUC prevention script -->
+    <script>
+        (function () {
+            var theme = localStorage.getItem('theme');
+            if (theme === 'light') {
+                document.documentElement.classList.add('light-theme');
+            }
+        })();
+    </script>
+</head>
+
+<body class="landing-body">
+
+    <!-- Header / Navbar -->
+    <header class="landing-header">
+        <div class="container">
+            <a href="#" class="logo">
+                <div class="logo-icon">N</div>
+                <span>NEXONIC</span>
+            </a>
+
+            <ul class="nav-menu">
+                <li><a href="#" class="nav-link active">Home</a></li>
+                <li><a href="#steps" class="nav-link">How It Works</a></li>
+                <li><a href="#features" class="nav-link">Features</a></li>
+                <li><a href="#pricing" class="nav-link">Premium</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button id="landing-theme-toggle" class="nav-btn"
+                    style="font-size: 16px; margin-right: 12px; color: var(--text-muted); cursor: pointer;"
+                    title="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <a href="{% url 'login' %}" class="login-link">Log in</a>
+                <a href="{% url 'register' %}" class="signup-btn">Sign up</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-left">
+                <h1 class="hero-title">
+                    Feel the <span class="gradient-text">Music.</span><br>
+                    Live the <span class="gradient-text">Moment.</span>
+                </h1>
+
+                <p class="hero-subtitle">
+                    Nexonic is your premium music streaming platform. Discover, play, and share your favorite songs
+                    anytime, anywhere.
+                </p>
+
+                <div class="hero-buttons">
+                    <a href="{% url 'login' %}" class="btn-primary">
+                        Start Listening <i class="fas fa-arrow-right"></i>
+                    </a>
+                    <a href="#features" class="btn-outline">Explore Features</a>
+                </div>
+
+                <div class="social-proof">
+                    <div class="avatar-group">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
+                            alt="User Avatar">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80"
+                            alt="User Avatar">
+                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80"
+                            alt="User Avatar">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80"
+                            alt="User Avatar">
+                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=80"
+                            alt="User Avatar">
+                    </div>
+                    <div class="social-text">
+                        Join <strong>10M+</strong> music lovers
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-right">
+                <!-- Cosmic Glowing background Behind Player -->
+                <div class="glow-bg"></div>
+
+                <!-- Decorative Sound Wave Elements -->
+                <svg class="wavy-soundlines" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 0 200 Q 100 120 200 200 T 400 200" stroke="rgba(168, 85, 247, 0.15)" stroke-width="2"
+                        fill="none" />
+                    <path d="M 0 220 Q 80 140 180 230 T 400 180" stroke="rgba(168, 85, 247, 0.2)" stroke-width="1.5"
+                        fill="none" />
+                    <path d="M 0 180 Q 120 100 220 180 T 400 220" stroke="rgba(168, 85, 247, 0.1)" stroke-width="1"
+                        fill="none" />
+                </svg>
+
+                <!-- Premium Player Mockup Card -->
+                <div class="player-mockup">
+                    <div class="player-cover-wrapper">
+                        <img class="player-cover" src="{% static 'images/night_drive_cover.png' %}"
+                            alt="Night Drive Cover Art">
+                    </div>
+
+                    <div class="player-details">
+                        <div>
+                            <div class="player-track-name">Night Drive</div>
+                            <div class="player-artist-name">Arensky</div>
+                        </div>
+                        <i class="fas fa-heart player-like-btn"></i>
+                    </div>
+
+                    <div class="player-timeline-wrapper">
+                        <div class="player-progress-bar">
+                            <div class="player-progress-fill"></div>
+                            <div class="player-progress-knob"></div>
+                        </div>
+                        <div class="player-time-info">
+                            <span>1:24</span>
+                            <span>3:48</span>
+                        </div>
+                    </div>
+
+                    <div class="player-controls-mock">
+                        <i class="fas fa-random mock-ctrl-btn"></i>
+                        <i class="fas fa-step-backward mock-ctrl-btn"></i>
+                        <button class="mock-play-btn">
+                            <i class="fas fa-play" style="margin-left: 2px;"></i>
+                        </button>
+                        <i class="fas fa-step-forward mock-ctrl-btn"></i>
+                        <i class="fas fa-redo mock-ctrl-btn"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Steps Section (How It Works) -->
+    <section class="steps-section" id="steps">
+        <div class="container">
+            <div class="steps-bar">
+                <!-- Step 1 -->
+                <div class="step-item">
+                    <div class="step-number-badge">1</div>
+                    <div class="step-content-box">
+                        <h4 class="step-title">Create Account</h4>
+                        <p class="step-desc">Sign up for a free Nexonic account in seconds.</p>
+                    </div>
+                </div>
+                <!-- Line Divider -->
+                <div class="step-line-divider"></div>
+                <!-- Step 2 -->
+                <div class="step-item">
+                    <div class="step-number-badge">2</div>
+                    <div class="step-content-box">
+                        <h4 class="step-title"> Sign in</h4>
+                        <p class="step-desc"> provide your Email & Password to Sign in.</p>
+                    </div>
+                </div>
+                <!-- Line Divider -->
+                <div class="step-line-divider"></div>
+                <!-- Step 3 -->
+                <div class="step-item">
+                    <div class="step-number-badge">3</div>
+                    <div class="step-content-box">
+                        <h4 class="step-title">Dashboard</h4>
+                        <p class="step-desc">Explore your music collections and make your own ringtones and enjoy the
+                            experience.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose Nexonic Features Section -->
+    <section class="features-section" id="features">
+        <div class="container">
+            <div class="section-header-landing">
+                <h2 class="section-title-landing">Why Choose Nexonic?</h2>
+
+                <!-- Purple Soundwave Design Separator -->
+                <div class="soundwave-dec">
+                    <div class="soundwave-bar"></div>
+                    <div class="soundwave-bar"></div>
+                    <div class="soundwave-bar"></div>
+                    <div class="soundwave-bar"></div>
+                    <div class="soundwave-bar"></div>
+                    <div class="soundwave-bar"></div>
+                </div>
+
+                <p class="section-desc-landing">
+                    Experience music like never before with our powerful features.
+                </p>
+            </div>
+
+            <div class="features-grid">
+                <!-- Feature 1: Millions of Songs -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <h3 class="feature-title">Millions of Songs</h3>
+                    <p class="feature-text">Access a vast library of songs from around the world.</p>
+                </div>
+
+                <!-- Feature 2: Podcast -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3 class="feature-title">Podcast</h3>
+                    <p class="feature-text">Discover Podcasts That Inspire, Entertain, and Keep You Listening.</p>
+                </div>
+
+                <!-- Feature 3: Personalized for You -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h3 class="feature-title">Personalized for You</h3>
+                    <p class="feature-text">Smart recommendations tailored to your unique taste.</p>
+                </div>
+
+                <!-- Feature 4: M -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <i class="fas fa-tablet-alt"></i>
+                    </div>
+                    <h3 class="feature-title">Music Studio</h3>
+                    <p class="feature-text">Create, record, and bring your music to life 🎵.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Premium Pricing Section -->
+    <section class="pricing-section" id="pricing">
+        <div class="container">
+            <div class="section-header-landing">
+                <h2 class="section-title-landing">Choose Your Premium Plan</h2>
+                <div class="soundwave-dec">
+                    <div class="soundwave-bar"></div>
+                    <div class="soundwave-bar"></div>
+                    <div class="soundwave-bar"></div>
+                    <div class="soundwave-bar"></div>
+                    <div class="soundwave-bar"></div>
+                    <div class="soundwave-bar"></div>
+                </div>
+                <p class="section-desc-landing">
+                    Get unlimited access to advanced music composing, high fidelity player, ringtone cutter, and custom
+                    playlists.
+                </p>
+            </div>
+
+            <div class="pricing-grid">
+                <!-- Plan 1: Free Trial -->
+                <div class="pricing-card">
+                    <div class="plan-badge">7 DAYS FREE</div>
+                    <h3 class="plan-name">Free Trial</h3>
+                    <div class="plan-price">₹0</div>
+                    <div class="plan-duration">For first 7 days</div>
+
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> 7 Days Unrestricted Access</li>
+                        <li><i class="fas fa-check"></i> Standard Streaming Quality</li>
+                        <li><i class="fas fa-check"></i> Synthesizer Beatmaker</li>
+                        <li><i class="fas fa-check"></i> Ringtone Cutting Editor</li>
+                    </ul>
+
+                    <a href="{% url 'register' %}" class="btn-outline btn-plan">Start Free Trial</a>
+                </div>
+
+                <!-- Plan 2: Monthly (Popular) -->
+                <div class="pricing-card popular">
+                    <div class="plan-badge">MOST POPULAR</div>
+                    <h3 class="plan-name">Monthly Premium</h3>
+                    <div class="plan-price">₹199<span class="price-suffix">/mo</span></div>
+                    <div class="plan-duration">Billed monthly</div>
+
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> Everything in Free Trial</li>
+                        <li><i class="fas fa-check"></i> Free Podcast</li>
+                        <li><i class="fas fa-check"></i> Free Music Studio</li>
+                        <li><i class="fas fa-check"></i> AI Composer Access</li>
+                    </ul>
+
+                    <a href="{% url 'register' %}" class="btn-primary btn-plan">Get Monthly Premium</a>
+                </div>
+
+                <!-- Plan 3: Yearly (Best Value) -->
+                <div class="pricing-card">
+                    <div class="plan-badge">BEST VALUE</div>
+                    <h3 class="plan-name">Yearly Premium</h3>
+                    <div class="plan-price">₹599<span class="price-suffix">/yr</span></div>
+                    <div class="plan-duration">Billed annually</div>
+
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> Save over 75% vs Monthly</li>
+                        <li><i class="fas fa-check"></i> Ultra High Quality Streaming</li>
+                        <li><i class="fas fa-check"></i> Free Podcast </li>
+                        <li><i class="fas fa-check"></i> Free Music Studio</li>
+                    </ul>
+
+                    <a href="{% url 'register' %}" class="btn-outline btn-plan">Get Yearly Premium</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer class="landing-footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-info">
+                    <a href="#" class="logo" style="margin-bottom: 8px;">
+                        <div class="logo-icon">N</div>
+                        <span>NEXONIC</span>
+                    </a>
+                    <p class="footer-desc">
+                        Your premium music streaming companion. Play, create, and experience music like never before.
+                    </p>
+                    <div class="footer-socials">
+                        <a href="https://www.facebook.com/pradeepkumar437" class="social-icon"><i
+                                class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.instagram.com/urs._.comrade_07/" class="social-icon"><i
+                                class="fab fa-instagram"></i></a>
+                        <a href="https://github.com/dashboard" class="social-icon"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+
+                <div class="footer-column">
+                    <h4 class="footer-title">Navigation</h4>
+                    <ul class="footer-links">
+                        <li class="footer-link-item"><a href="#">Home</a></li>
+                        <li class="footer-link-item"><a href="#steps">How It Works</a></li>
+                        <li class="footer-link-item"><a href="#features">Features</a></li>
+                        <li class="footer-link-item"><a href="#pricing">Premium Plans</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h4 class="footer-title">Features</h4>
+                    <ul class="footer-links">
+                        <li class="footer-link-item"><a href="{% url 'login' %}">Song Studio</a></li>
+                        <li class="footer-link-item"><a href="{% url 'login' %}">Ringtone Maker</a></li>
+                        <li class="footer-link-item"><a href="{% url 'login' %}">Podcasts</a></li>
+                        <li class="footer-link-item"><a href="{% url 'login' %}">Web Player</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h4 class="footer-title">Support</h4>
+                    <ul class="footer-links">
+                        <li class="footer-link-item"><a href="#">Help Center</a></li>
+                        <li class="footer-link-item"><a href="#">Contact Us</a></li>
+                        <li class="footer-link-item"><a href="#">Support Ticket</a></li>
+                        <li class="footer-link-item"><a href="#">API Access</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div>
+                    &copy; 2026 Nexonic Inc. All rights reserved.
+                </div>
+                <div class="footer-legal-links">
+                    <a href="#" class="footer-legal-link">Privacy Policy</a>
+                    <a href="#" class="footer-legal-link">Terms of Service</a>
+                    <a href="#" class="footer-legal-link">Cookie Settings</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Theme Logic script -->
+    <script src="{% static 'js/theme.js' %}"></script>
+</body>
+
+</html>

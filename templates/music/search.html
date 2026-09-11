@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Search - Nexonic{% endblock %}
+
+{% block content %}
+<!-- Search results wrapper (Populated dynamically by search.js) -->
+<div id="search-results-pane" style="display: none;">
+    <!-- Rendered dynamically -->
+</div>
+
+<!-- Category cards (Shown on load / when search input is empty) -->
+<div id="browse-categories-pane">
+    <div class="section-container">
+        <div class="section-header">
+            <h2 class="section-title">Browse all</h2>
+        </div>
+        
+        <div class="media-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+            {% for cat in categories %}
+                <!-- Render colorful category cards -->
+                <a class="category-card" href="{% url 'category_playlists' cat.id %}">
+                    <div class="category-name">{{ cat.name }}</div>
+                    {% if cat.icons.0.url %}
+                        <img class="category-image" src="{{ cat.icons.0.url }}" alt="{{ cat.name }}">
+                    {% else %}
+                        <img class="category-image" src="https://picsum.photos/100" alt="{{ cat.name }}">
+                    {% endif %}
+                </a>
+            {% empty %}
+                <!-- Fallback premium categories if Spotify configuration is blank -->
+                <div class="category-card" onclick="window.location.href='/category/pop/'" style="background-color: #8d67ab;">
+                    <div class="category-name">Pop</div>
+                    <img class="category-image" src="https://picsum.photos/id/102/100/100" alt="">
+                </div>
+                <div class="category-card" onclick="window.location.href='/category/hiphop/'" style="background-color: #e1113c;">
+                    <div class="category-name">Hip-Hop</div>
+                    <img class="category-image" src="https://picsum.photos/id/104/100/100" alt="">
+                </div>
+                <div class="category-card" onclick="window.location.href='/category/rock/'" style="background-color: #1e3264;">
+                    <div class="category-name">Rock</div>
+                    <img class="category-image" src="https://picsum.photos/id/106/100/100" alt="">
+                </div>
+                <div class="category-card" onclick="window.location.href='/category/dance/'" style="background-color: #e8115b;">
+                    <div class="category-name">Dance & Electronic</div>
+                    <img class="category-image" src="https://picsum.photos/id/108/100/100" alt="">
+                </div>
+                <div class="category-card" onclick="window.location.href='/category/jazz/'" style="background-color: #148a08;">
+                    <div class="category-name">Jazz</div>
+                    <img class="category-image" src="https://picsum.photos/id/110/100/100" alt="">
+                </div>
+                <div class="category-card" onclick="window.location.href='/category/ambient/'" style="background-color: #503750;">
+                    <div class="category-name">Ambient</div>
+                    <img class="category-image" src="https://picsum.photos/id/112/100/100" alt="">
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

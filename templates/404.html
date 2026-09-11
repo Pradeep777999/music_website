@@ -1,0 +1,27 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found - Nexonic</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body class="auth-page-container" style="text-align: center;">
+
+    <div class="auth-card" style="max-width: 500px; padding: 50px 30px;">
+        <div class="auth-brand">NEXONIC</div>
+        <div style="font-size: 72px; color: var(--brand-green); font-weight: 800; line-height: 1; margin-bottom: 20px;">404</div>
+        <h2 class="auth-title" style="margin-bottom: 15px;">Page Not Found</h2>
+        <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 30px;">
+            The page you are looking for doesn't exist, has been removed, or is temporarily unavailable.
+        </p>
+        
+        <a href="/" class="btn-primary" style="display: inline-flex; padding: 12px 32px; justify-content: center;">
+            <i class="fas fa-home" style="margin-right: 8px;"></i> GO HOME
+        </a>
+    </div>
+
+</body>
+</html>
